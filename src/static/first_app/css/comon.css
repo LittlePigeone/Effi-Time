@@ -1,0 +1,129 @@
+* {
+    margin: 0px;
+    padding: 0px;
+    font-size: 24px;
+}
+
+body {
+    height: 100vh;
+    width: 100vw;
+    background-image: url('../../common/images/bg.jpg');
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    background-position: center;
+}
+
+.main_section {
+    overflow: hidden;
+    display: flex;
+    height: 100vh;
+    width: 100vw;
+}
+
+.left_panel {
+    height: 100%;
+    width: 152px;
+    border-top-right-radius: 40px;
+    border-bottom-right-radius: 40px;
+    border-top-left-radius: 0px;
+    border-bottom-left-radius: 0px;
+}
+
+.image {
+    width: 100px;
+    height: 100px;
+    margin: 20px;
+    background-image: url('../../common/images/avatarka.png');
+    background-position: center;
+    background-size: contain;
+    background-repeat: no-repeat;
+}
+
+.glass-block {
+    border-radius: 25px;
+    background: rgba(0, 0, 0, 0.199);
+    box-shadow: 2px 2px 3px 0px rgba(0, 0, 0, 0.25);
+    border-top: 1px solid rgba(255, 255, 255, 0.85);
+    border-left: 1px solid rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(5px);
+        -webkit-backdrop-filter: blur(5px);
+}
+
+.navigation_button {
+    width: 90%;
+    height: 50px;
+    margin-left: 5px;
+    margin-top: 60px;
+    background: rgba(151, 151, 151, 0.616);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.smaller_text {
+    font-size: smaller;
+    max-width: 80%;
+    width: 79%;
+    color: rgb(70, 70, 70);
+    text-align: center;
+}
+
+.glass-block::placeholder {
+    color: rgb(70, 70, 70);
+}
+
+/* общий хром-стиль */
+*::-webkit-scrollbar {
+  height: 8px; /* влияет на горизонтальный */
+  width: 8px;  /* влияет на вертикальный */
+}
+
+/* дорожка */
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* ползунок */
+*::-webkit-scrollbar-thumb {
+  background: rgba(0,0,0,0.4);
+  border-radius: 4px;
+}
+
+/* ползунок при наведении */
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(0,0,0,0.6);
+}
+
+.glass-input-checkbox {
+    appearance: none; 
+        -webkit-appearance: none;  /* Safari */
+        -moz-appearance: none;     /* Firefox */
+    width: 18px;
+    height: 18px;
+    background: transparent;
+    border: 1px solid #ACACAC;
+    border-radius: 5px;  
+    background: transparent;
+    cursor: pointer;
+
+    display: inline-block;
+    vertical-align: middle;
+}
+
+.glass-input-checkbox:checked {
+  background: rgba(255,255,255,0.3);  /* лёгкая подсветка */
+  border-color: #858585;              /* цвет рамки при активном */
+}
+
+.glass-input-checkbox:checked::after {
+  content: url('../../common/svgs/check-mark.svg');
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #858585;
+  text-align: center;
+  line-height: 18px;
+}

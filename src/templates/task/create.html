@@ -1,0 +1,46 @@
+<!-- Include stylesheet -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" rel="stylesheet">
+
+<!-- Include the highlight.js library -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+
+<link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet" />
+
+<!-- Create the editor container -->
+<div id="editor">
+  <p>Hello World!</p>
+  <p>Some initial <strong>bold</strong> text</p>
+  <p><br /></p>
+</div>
+
+<!-- Include the Quill library -->
+<script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
+
+<!-- Initialize Quill editor -->
+<script>
+  const toolbar = [
+      [{ header: [1, 2, 3, false] }],
+      ['bold', 'italic', 'underline', 'strike'],
+      [{ list: 'ordered' }, { list: 'bullet' }],
+      ['link', 'blockquote', 'code-block'],
+      [{ align: [] }],
+      ['image'] // Добавляем кнопку для вставки картинок
+  ];
+
+  const quill = new Quill('#editor', {
+    theme: 'snow', 
+    modules: { 
+        toolbar: {
+            container: toolbar,
+            handlers: {
+                image: () => this.handleImageUpload()
+            }
+        },
+        imageResize: typeof window.ImageResize !== 'undefined' ? {
+            parchment: window.Quill.import('parchment'),
+            modules: [ 'Resize', 'DisplaySize', 'Toolbar' ]
+        } : undefined
+    }
+  });
+
+</script>
