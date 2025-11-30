@@ -14,6 +14,18 @@ body {
     background-position: center;
 }
 
+hr {
+  border: none;
+  outline: none;
+  height: 1px;
+  background-color: rgba(255, 255, 255, .5);
+  border-radius: 4px;
+}
+
+.hide {
+  display: none;
+}
+
 .main_section {
     overflow: hidden;
     display: flex;
@@ -28,16 +40,25 @@ body {
     border-bottom-right-radius: 40px;
     border-top-left-radius: 0px;
     border-bottom-left-radius: 0px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 25px;
 }
 
 .image {
     width: 100px;
     height: 100px;
-    margin: 20px;
+    /* margin: 20px; */
     background-image: url('../../common/images/avatarka.png');
     background-position: center;
     background-size: contain;
     background-repeat: no-repeat;
+}
+
+.image-small {
+    width: 33px;
+    height: 33px;
 }
 
 .glass-block {
@@ -69,6 +90,83 @@ body {
     text-align: center;
 }
 
+/* input:text */
+/* input:search */
+
+.glass-input-daytime {
+    width: fit-content;
+    height: 30px;
+    padding: 0px 16px;
+    box-sizing: border-box;
+    font-size: 14px;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    outline: none;
+    border-radius: 10px;
+    box-shadow: inset 2px 2px 3px 0px rgba(0, 0, 0, 0.25);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.85);
+    border-right: 1px solid rgba(255, 255, 255, 0.85);
+}
+
+.glass-input-text, .glass_input_texture {
+    width: 200px;
+    height: 30px;
+    padding-left: 16px;
+    box-sizing: border-box;
+    font-size: 14px;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    outline: none;
+    border-radius: 25px;
+    box-shadow: inset 2px 2px 3px 0px rgba(0, 0, 0, 0.25);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.85);
+    border-right: 1px solid rgba(255, 255, 255, 0.85);
+}
+
+.glass-input-text::placeholder {
+    color: rgb(39, 39, 39);
+}
+
+.glass_input_texture{
+  width: 100%;
+  border-radius: 10px;
+  height: fit-content;
+  padding: initial;
+}
+
+/* input:button */
+.glass-input-button {
+    width: 200px;
+    height: 30px;
+    border: none;
+    outline: none;
+    border-radius: 25px;
+    background: rgba(255, 255, 255, 0.1);
+    box-shadow: 2px 2px 3px 0px rgba(0, 0, 0, 0.25);
+    border-top: 1px solid rgba(255, 255, 255, 0.85);
+    border-left: 1px solid rgba(255, 255, 255, 0.85);
+    font-size: 16px;
+    cursor: pointer;
+}
+.glass-input-button:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+.glass-input-button:active {
+    border: none;
+    outline: none;
+    box-shadow: inset 2px 2px 3px 0px rgba(0, 0, 0, 0.25);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.85);
+    border-right: 1px solid rgba(255, 255, 255, 0.85);
+}
+
+.small-border {
+  border-radius: 10px;
+}
+
+.max-width {
+  width: 100%;
+}
+
 .glass-block::placeholder {
     color: rgb(70, 70, 70);
 }
@@ -95,12 +193,15 @@ body {
   background: rgba(0,0,0,0.6);
 }
 
+/* input:checkbox */
 .glass-input-checkbox {
     appearance: none; 
         -webkit-appearance: none;  /* Safari */
         -moz-appearance: none;     /* Firefox */
     width: 18px;
     height: 18px;
+    min-width: 18px;
+    min-height: 18px;
     background: transparent;
     border: 1px solid #ACACAC;
     border-radius: 5px;  
@@ -110,12 +211,10 @@ body {
     display: inline-block;
     vertical-align: middle;
 }
-
 .glass-input-checkbox:checked {
   background: rgba(255,255,255,0.3);  /* лёгкая подсветка */
   border-color: #858585;              /* цвет рамки при активном */
 }
-
 .glass-input-checkbox:checked::after {
   content: url('../../common/svgs/check-mark.svg');
   width: 16px;
@@ -126,4 +225,115 @@ body {
   color: #858585;
   text-align: center;
   line-height: 18px;
+}
+
+/* Стили для выподающих стилей */
+
+.glass_select {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  background-color: rgba(225, 225, 225, 0.2);
+  padding: 10px;
+  border-radius: 5px 0px 0px 5px;
+  position: relative;
+}
+
+.glass-select-title {
+  font-size: 14px;
+}
+
+.glass-select-drop-list {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.glass-select-drop-selected-items {
+  display: none;
+  flex-direction: column;
+  overflow-y: auto;
+  overflow-x: hidden;
+  position: absolute;
+  top: 30px;
+  width: 100%;
+  height: 200px;
+  background-color: rgba(225, 225, 225, 0.28);
+  border-radius: 0px 0px 5px 5px;
+  backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+  box-shadow: 2px 2px 3px 0px rgba(0, 0, 0, 0.25);
+  z-index: 1;
+}
+
+.glass-select-drop-selected-items hr {
+  width: 97%;
+  opacity: 0.4;
+  border: none;
+  border-top: 1px solid rgba(255, 255, 255, 0.651);;
+}
+
+.drop-list-items-show {
+  display: flex;
+  align-items: center;
+}
+
+.glass-select-selected-items {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.glass-select-selected-item {
+  width: fit-content;
+  height: fit-content;
+  background: rgba(218, 214, 214, 0.479);
+  border-radius: 3px;
+  padding: 4px, 5px;
+  display: flex;
+  gap: 5px;
+}
+
+.glass-select-selected-item > h6 {
+  font-size: 14px;
+  color: #1616169d;
+}
+
+.tag-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+.tag-close img {width: 16px; height: 16px; pointer-events: none;}
+.tag-close:hover { opacity: .8; }
+
+.glass-select-drop-list-value {
+  width: 100%;
+  height: fit-content;
+  padding: 5px 0px 5px 10px;
+  box-sizing: border-box;
+  cursor: pointer;
+}
+
+.glass-select-drop-list-value:hover {
+  background-color: rgba(255, 255, 255, 0.15);
+}
+
+.glass-select-drop-list-value > h6 {
+  font-size: 14px;
+}
+
+/* --------------- */
+
+.copy-button {
+  background: none;
+  outline: none;
+  border: none;
+  cursor: pointer;
+  width: 15px;
+  height: 15px;
+  display: flex;
 }
