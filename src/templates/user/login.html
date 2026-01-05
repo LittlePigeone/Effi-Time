@@ -1,0 +1,260 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{{ title|default:"Вход" }}</title>
+
+  <style>
+    :root{
+      --bg0:#05060A;
+      --bg1:#070A12;
+      --panel: rgba(255,255,255,.08);
+      --panel2: rgba(255,255,255,.12);
+      --stroke: rgba(255,255,255,.16);
+      --text:#F3F6FF;
+      --muted: rgba(243,246,255,.70);
+      --accent:#8B5CF6;
+      --accent2:#34D399;
+      --danger:#FF4D6D;
+      --shadow: 0 28px 90px rgba(0,0,0,.60);
+      --radius: 22px;
+    }
+
+    *{ box-sizing: border-box; }
+    html, body{ height:100%; }
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      color: var(--text);
+      background:
+        radial-gradient(1200px 800px at 12% 18%, rgba(139,92,246,.22), transparent 55%),
+        radial-gradient(1100px 780px at 88% 12%, rgba(52,211,153,.18), transparent 54%),
+        radial-gradient(900px 720px at 50% 92%, rgba(59,130,246,.16), transparent 55%),
+        linear-gradient(180deg, var(--bg0), var(--bg1));
+      overflow:hidden;
+    }
+
+    .aurora{
+      position:absolute; inset:-40%;
+      background:
+        radial-gradient(closest-side at 20% 20%, rgba(139,92,246,.70), transparent 60%),
+        radial-gradient(closest-side at 80% 15%, rgba(52,211,153,.55), transparent 58%),
+        radial-gradient(closest-side at 55% 80%, rgba(59,130,246,.45), transparent 62%);
+      filter: blur(40px);
+      opacity:.85;
+      animation: auroraMove 18s ease-in-out infinite;
+      pointer-events:none;
+      mix-blend-mode: screen;
+    }
+    .aurora.a2{
+      opacity:.55;
+      filter: blur(55px);
+      animation-duration: 24s;
+    }
+    @keyframes auroraMove{
+      0%{ transform: translate3d(-2%, -2%, 0); }
+      50%{ transform: translate3d(2%, 3%, 0) scale(1.06); }
+      100%{ transform: translate3d(-2%, -2%, 0); }
+    }
+
+    .wrap{
+      position:relative;
+      height:100%;
+      display:grid;
+      place-items:center;
+      padding: 28px 16px;
+    }
+
+    .card{
+      width: min(460px, 92vw);
+      border-radius: var(--radius);
+      background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.06));
+      border: 1px solid var(--stroke);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(16px);
+      overflow:hidden;
+      animation: cardIn .6s ease forwards;
+    }
+
+    @keyframes cardIn{
+      from{ opacity:0; transform: translateY(10px); }
+      to{ opacity:1; transform:none; }
+    }
+
+    .inner{ padding: 26px; }
+
+    .brand{ display:flex; align-items:center; gap:12px; margin-bottom: 18px; }
+    .logo{
+      width: 44px; height: 44px;
+      border-radius: 16px;
+      background: conic-gradient(from 220deg, #8B5CF6, #34D399, #3B82F6, #8B5CF6);
+    }
+
+    h1{ font-size:18px; margin:0; }
+    .subtitle{ color: var(--muted); font-size:13px; margin-bottom:16px; }
+
+    .alert{
+      display:none;
+      border:1px solid rgba(255,77,109,.35);
+      background: rgba(255,77,109,.10);
+      padding:12px;
+      border-radius:14px;
+      margin-bottom:14px;
+    }
+    .alert.show{ display:block; }
+
+    .field{ margin-bottom:14px; }
+    label{ font-size:12px; display:block; margin-bottom:6px; }
+
+    input{
+      width:100%;
+      padding:13px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(8,10,18,.46);
+      color: var(--text);
+      font-size:14px;
+    }
+
+    .btn{
+      width:100%;
+      margin-top:12px;
+      padding:12px;
+      border:0;
+      border-radius:16px;
+      cursor:pointer;
+      font-weight:700;
+      background: linear-gradient(135deg, #8B5CF6, #34D399);
+      color:#fff;
+    }
+
+    .btn.loading{ opacity:.7; cursor:wait; }
+
+    .shake{ animation: shake .35s; }
+    @keyframes shake{
+      20%{ transform: translateX(-6px); }
+      40%{ transform: translateX(6px); }
+      60%{ transform: translateX(-4px); }
+      80%{ transform: translateX(4px); }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="aurora"></div>
+  <div class="aurora a2"></div>
+
+  <main class="wrap">
+    <section class="card" id="card">
+      <div class="inner">
+
+        <div class="brand">
+          <div class="logo"></div>
+          <div>
+            <h1>Time Shape Manager</h1>
+            <div class="subtitle">Панель управления</div>
+          </div>
+        </div>
+
+        <h2>Вход</h2>
+        <p class="subtitle">Доступ в систему</p>
+
+        <div class="alert" id="alert"></div>
+
+        <form id="loginForm" novalidate>
+          {% csrf_token %}
+
+          <div class="field">
+            <label for="username">Username</label>
+            <input id="username" type="text" autocomplete="username" required>
+          </div>
+
+          <div class="field">
+            <label for="password">Password</label>
+            <input id="password" type="password" autocomplete="current-password" required>
+          </div>
+
+          <button class="btn" id="submitBtn" type="button">Войти</button>
+        </form>
+
+      </div>
+    </section>
+  </main>
+
+  <script>
+  (function () {
+    const btn = document.getElementById('submitBtn');
+    const alertBox = document.getElementById('alert');
+    const card = document.getElementById('card');
+
+    const user = document.getElementById('username');
+    const pwd = document.getElementById('password');
+
+    function showError(text) {
+      alertBox.textContent = text;
+      alertBox.classList.add('show');
+      card.classList.remove('shake');
+      void card.offsetWidth;
+      card.classList.add('shake');
+    }
+
+    function setLoading(v) {
+      btn.classList.toggle('loading', v);
+      btn.disabled = v;
+    }
+
+    function getCookie(name) {
+      const m = document.cookie.match(
+        new RegExp('(?:^|; )' + name + '=([^;]*)')
+      );
+      return m ? decodeURIComponent(m[1]) : null;
+    }
+
+    btn.addEventListener('click', async () => {
+      const username = user.value.trim();
+      const password = pwd.value;
+
+      if (!username || !password) {
+        showError('Заполните username и password.');
+        return;
+      }
+
+      alertBox.classList.remove('show');
+      setLoading(true);
+
+      try {
+        const res = await fetch('/login/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken'),
+            'X-Requested-With': 'XMLHttpRequest',
+          },
+          credentials: 'same-origin',
+          body: JSON.stringify({ username, password }),
+        });
+
+        if (res.status === 204) {
+          window.location.href = '/';
+          return;
+        }
+
+        if (res.status === 400) {
+          const data = await res.json();
+          showError(data.detail || 'Ошибка авторизации.');
+          return;
+        }
+
+        showError('Неожиданный ответ сервера.');
+      } catch {
+        showError('Сервер недоступен.');
+      } finally {
+        setLoading(false);
+      }
+    });
+  })();
+  </script>
+</body>
+</html>

@@ -1,46 +1,155 @@
-<!-- Include stylesheet -->
-<link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" rel="stylesheet">
-<!-- Include the highlight.js library -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
-<link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet" />
-<!-- Include the Quill library -->
-<script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
+<link rel="stylesheet" href="../static/quill/css/atom-one-dark.min.css">
+<link rel="stylesheet" href="../static/quill/css/quill.css">
+<link rel="stylesheet" href="../static/first_app/css/view_task.css">
+
+<script src="../static/quill/js/highlight.min.js"></script>
+<script src="../static/quill/js/quill.js"></script>
+<script src="../static/first_app/js/select.js"></script>
 
 
-<!-- Create the editor container -->
-<div id="editor">
-  <p>Hello World!</p>
-  <p>Some initial <strong>bold</strong> text</p>
-  <p><br /></p>
-</div>
+<div class="task_view_main_block glass-block">
+            <div class="task-view--up-bar"></div>
+            <hr>
+            <div class="task-view--settings">
+                <div class="task-view--settings--overlay">
+                    <input type="checkbox" class="glass-input-checkbox" name="" id="">
+                    <h1 class="settings-title task_text">Подзадача с каким-то очень длинным текстом не на одну строчку</h1>
+                </div>
+            </div>
+            <div class="task-view--main-info">
+                <h1 class="main-ingo-title">Основное</h1>
+                <input type="text" placeholder="Введите Название задачи..." class="glass-input-text small-border max-width">
+                <div class="glass_input_texture">
+                    <div class="main-info-discription"></div>
+                </div>
+                <input type="button" value="Сохранить" class="glass-input-button" onclick="create_task()">
+
+            </div>
+            <hr>
+            <div class="task-view--other-parameters">
+                <h1 class="setting-title task_text">Параметры</h1>
+                <div class="set_start_day">
+                    <h6 class="other_parameters_text">Начало выполнения</h6>
+                    <input type="datetime-local" name="" id="set_start_day" class="glass-input-daytime">
+                </div>
+                <div class="set_end_day">
+                    <h6 class="other_parameters_text">Конец выполнения</h6>
+                    <input type="datetime-local" name="" id="set_end_day" class="glass-input-daytime">
+                </div>
+
+                <div class="sphere-select" id=""></div>
+
+                <div class="importsnce-select" id=""></div>
+
+                <div class="status-select" id=""></div>
+
+                <div class="subtask-select" id=""></div>
+
+                <div class="sprint-select" id=""></div>
+
+                <div class="tags-select" id=""></div>
+            </div>
+        </div>
+
+<script type="text/javascript">
+            const toolbar = [
+                [{ header: [1, 2, 3, 4, false] }],
+                ['bold', 'italic', 'underline', 'strike'],
+                [{ list: 'ordered' }, { list: 'bullet' }],
+                ['link', 'blockquote', 'code-block'],
+                [{ align: [] }],
+                ['image'] // Добавляем кнопку для вставки картинок
+            ];
+
+            const quill = new Quill('.main-info-discription', {
+                theme: 'snow',
+                modules: {
+                    toolbar: {
+                        container: toolbar,
+                        handlers: {
+                            image: () => this.handleImageUpload()
+                        }
+                    },
+                    imageResize: typeof window.ImageResize !== 'undefined' ? {
+                        parchment: window.Quill.import('parchment'),
+                        modules: [ 'Resize', 'DisplaySize', 'Toolbar' ]
+                    } : undefined
+                }
+            });
+        </script>
+
+<script type="text/javascript">
+
+    var sphere = null;
+    var importsnce = null;
+    var status = null;
+    var subtask = null;
+    var sprint = null;
+    var tags = null;
+
+    request({
+        url: '/task/creating/',
+    }).then(data => {
+
+        sphere = initGlassSelect({
+            items: data.categories,
+            selector: '.sphere-select',
+            title: 'Сфера',
+        });
+        // importsnce = initGlassSelect({
+        //     items: tags_mock,
+        //     selector: '.importsnce-select',
+        //     title: 'Важность',
+        // });
+        status = initGlassSelect({
+            items: data.statuses,
+            selector: '.status-select',
+            title: 'Статус',
+        });
+        // subtask = initGlassSelect({
+        //     items: tags_mock,
+        //     selector: '.subtask-select',
+        //     title: 'Подзадачи',
+        // });
+        sprint = initGlassSelect({
+            items: data.sprints,
+            selector: '.sprint-select',
+            title: 'Спринты',
+        });
+        tags = initGlassSelect({
+            items: data.tags,
+            selector: '.tags-select',
+            title: 'Тэги',
+        });
+
+    });
 
 
 
-<!-- Initialize Quill editor -->
-<script>
-  const toolbar = [
-      [{ header: [1, 2, 3, false] }],
-      ['bold', 'italic', 'underline', 'strike'],
-      [{ list: 'ordered' }, { list: 'bullet' }],
-      ['link', 'blockquote', 'code-block'],
-      [{ align: [] }],
-      ['image'] // Добавляем кнопку для вставки картинок
-  ];
-
-  const quill = new Quill('#editor', {
-    theme: 'snow', 
-    modules: { 
-        toolbar: {
-            container: toolbar,
-            handlers: {
-                image: () => this.handleImageUpload()
-            }
-        },
-        imageResize: typeof window.ImageResize !== 'undefined' ? {
-            parchment: window.Quill.import('parchment'),
-            modules: [ 'Resize', 'DisplaySize', 'Toolbar' ]
-        } : undefined
+    function get_select_data() {
+        console.log(sphere.values);
     }
-  });
+</script>
 
+<script type="text/javascript">
+    function create_task() {
+        let body = {
+            sphere: sphere.values,
+            // importsnce: importsnce.values,
+            status: status.values,
+            // subtask: subtask.values,
+            sprint: sprint.values,
+            tags: tags.values,
+        };
+
+        console.log(body);
+
+        // request({
+        //     url: '/task/creating/',
+        //     method: "POST",
+        //     body: body,
+        // }).thne(data => {
+
+        // });
+    }
 </script>

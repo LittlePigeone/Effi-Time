@@ -1,8 +1,8 @@
 .right_panel {
     margin-left: 98px;
-    margin-top: 87px;
     width: 80%;
     height: 85%;
+    display: inline !important;
 }
 
 .bottom_buttons {

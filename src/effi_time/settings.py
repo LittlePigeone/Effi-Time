@@ -1,22 +1,31 @@
 import os
+import environ
 from pathlib import Path
 
-from django.conf.global_settings import MEDIA_URL, MEDIA_ROOT
 
+# Путь к директории src
 BASE_DIR = Path(__file__).resolve().parent.parent
+env = environ.Env(DEBUG=(bool, False))
+environ.Env.read_env(os.path.join(BASE_DIR.parent, '.env'))
 
 
-SECRET_KEY = 'django-insecure-&enm0#!yrekh40r^5wb)te3q$dmzhd=xx)5e(#5g(l6@2#f%mm'
+SECRET_KEY = env.str('SECRET_KEY')
 
-DEBUG = True
+# Принцп старта проекта
+DEBUG = env.bool('DEBUG')
 
+# Адреса с которых можно подключаться к проекту. По умолчанию * - ЛЮБЫЕ
 ALLOWED_HOSTS = ['*']
 
+# Списки подключёенных приложений (APPS и INSTALLED_APPS)
 APPS = [
-    'first_app',
+    'user',
+    'task',
+    'common',
 ]
 
 INSTALLED_APPS = [
+    'rest_framework',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -25,6 +34,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 ] + APPS
 
+# Промежуточное ПО
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -35,8 +45,11 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'effi_time.urls'
+# Путиь к файлу, куда приходят сигналы для проверки пути
+ROOT_URLCONF = 'presentation.urls'
+AUTH_USER_MODEL = 'user.User'
 
+# Путь и настройка дерикторий в корторых все HTML
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -53,14 +66,18 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'effi_time.wsgi.application'
+ASGI_APPLICATION = 'effi_time.asgi.application'
 
 
-
+# Списко подключённх бд
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': env.str('DB_ENGINE'),
+        'NAME': env.str('DB_NAME'),
+        'USER': env.str('DB_USER'),
+        'PASSWORD': env.str('DB_PASSWORD'),
+        'HOST': env.str('DB_HOST'),
+        'PORT': env.str('DB_PORT'),
     }
 }
 
@@ -89,11 +106,13 @@ USE_I18N = True
 
 USE_TZ = True
 
+# Путь к статик папке
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static'),
 ]
 
+# Путь к папке мдеиа
 MEDIA_URL = '/media/'
 MEDIA_ROOT = str(BASE_DIR / 'media')
 

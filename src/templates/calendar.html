@@ -1,41 +1,15 @@
-<!doctype html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport"
-          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>{{ title }}</title>
+{% extends 'index.html' %}
 
-    <link rel="stylesheet" href="../static/first_app/css/comon.css">
+{% block links_block %}
     <link rel="stylesheet" href="../static/first_app/css/calendar.css">
+{% endblock %}
+
+{% block scripts_block %}
     <script src="../static/first_app/js/calendar.js"></script>
-</head>
-<body>
-    <section class="main_section">
-        <div class="left_panel glass-block">
-            <div class="image"></div>
+{% endblock %}
 
-            <div class="navigation">
-                <div class="navigation_button glass-block">
-                    <h1 class="smaller_text">Сферы жизни</h1>
-                </div>
-
-                <div class="navigation_button glass-block">
-                    <h1 class="smaller_text">Расписание на неделю</h1>
-                </div>
-
-                <div class="navigation_button glass-block">
-                    <h1 class="smaller_text">Все задания</h1>
-                </div>
-
-                <div class="navigation_button glass-block">
-                    <h1 class="smaller_text">Активновсти</h1>
-                </div>
-            </div>
-        </div>
-
-        <div class="calendar-section">
+{% block content %}
+    <div class="calendar-section">
             <div class="calendar-main-block glass-block">
                 <div class="waiter"></div>
                 <div class="search-filter-block"></div>
@@ -59,6 +33,7 @@
                             <div class="calendar--row"><h6>05:00</h6></div>
                             <div class="calendar--row"><h6>06:00</h6></div>
                             <div class="calendar--row"><h6>07:00</h6></div>
+                            <div class="calendar--row"><h6>08:00</h6></div>
                             <div class="calendar--row"><h6>09:00</h6></div>
                             <div class="calendar--row"><h6>10:00</h6></div>
                             <div class="calendar--row"><h6>11:00</h6></div>
@@ -108,7 +83,5 @@
                 </div>
 
             </div>
-        </div>
-    </section>
-</body>
-</html>
+</div>
+{% endblock %}

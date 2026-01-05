@@ -1,0 +1,29 @@
+{% extends 'index.html' %}
+
+{% block links_block %}
+    <link rel="stylesheet" href="../static/first_app/css/index.css">
+{% endblock %}
+
+{% block content %}
+     <div class="right_panel glass-block">
+         <div class="block glass-block">
+             <h2>+</h2>
+         </div>
+     </div>
+
+    <script type="text/javascript">
+        request({
+            url: 'category/list/',
+        }).then(data => {
+            console.log(data);
+            let right_panel = document.querySelector('.right_panel');
+            for (let i = 0; i < data.length; i++) {
+                right_panel.insertAdjacentHTML('afterbegin', `
+                    <div class="block glass-block" data-id='${data[i].id}'>
+                        <h1 class="button_text">${data[i].name}</h1>
+                    </div>
+                `);
+            }
+        })
+    </script>
+{% endblock %}

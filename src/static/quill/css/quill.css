@@ -978,6 +978,7 @@
 }
 .ql-toolbar.ql-snow + .ql-container.ql-snow {
     border-top: 0;
+    height: fit-content;
 }
 .ql-snow .ql-tooltip {
     background-color: #fff;
