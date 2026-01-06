@@ -4,7 +4,7 @@ class AddItem {
         urlToAdd=''
     }) {
         this.canAdd = canAdd;
-        this.AddItem = urlToAdd
+        this.urlToAdd = urlToAdd;
     }
 }
 
@@ -12,7 +12,7 @@ class AddItem {
  * @param {Object} params
  * @param {null | string} [params.selector]
  * @param {string[]} [params.selectors]
- * @param {Map{}} [params.items]
+ * @param {Map[]} [params.items]
  * @param {null | AddItem} [params.addItem]
  * @param {string} [params.title]
  * @returns {boolean | void}
@@ -20,9 +20,9 @@ class AddItem {
 function initGlassSelect({
     selector=null,
     selectors=[],
-    addItem=null,
     items=[],
-    title='',
+    addItem=null,
+    title="",
 }) {
     if (selector) {
         let select = document.querySelector(selector);
@@ -30,7 +30,7 @@ function initGlassSelect({
             console.error('Не получается инициалиизировать список!\nБлок не найден');
             return;
         }
-        else{
+        else {
             return initInterface({select: select, title: title, items: items});
         }
     }
@@ -46,7 +46,6 @@ function initGlassSelect({
             console.error('Не получается инициалиизировать список!\nКакой-то из блоков не найден');
             return;
         }
-        
     }
     else {
         return;
@@ -59,46 +58,46 @@ function initInterface({
     items,
 }) {
     let main_select_block = createDiv({
-        classList: ['glass_select'],
+        classList: ["glass-select"],
         id: select.id,
         onclick: () => {},
     });
     main_select_block.values = [];
     let drop_list = createDiv({
-        classList: ['glass-select-drop-list'],
-        onclick: () => {}, 
+        classList: ["glass-select--drop-list"],
+        onclick: () => {},
     });
     let selected_items = createDiv({
-        classList: ['glass-select-selected-items'],
-        onclick: () => {}, 
+        classList: ["glass-select--selected-items"],
+        onclick: () => {},
     });
-    let selecet_title = createTextH({
+    let select_title = createTextH({
         title: title,
-        classList: ['glass-select-title'],
+        classList: ["glass-select--title"],
     });
-
-    // -----------------------
+    // ----------
     let dropListItemsBlock = createDiv({
-        classList: ['glass-select-drop-selected-items'],    
+        classList: ["glass-select--drop-list--items"],
     });
     let textInput = createInput({
-        type: 'text',
-        classList: ['glass-input-text', 'small-border', 'max-width'],
-        placeholder:  'Введите текст...',
-        onfocus: (event) => {            dropListItemsBlock.classList.add('drop-list-items-show');
-            console.log('Сфокусировлись');
+        type: "text",
+        classList: ["glass-input-text", "small-border", "max-width"],
+        placeholder: "Введите текст...",
+        onfocus: (event) => {
+            dropListItemsBlock.classList.add('drop-list--items--show');
+            console.log('Сфокусировались');
         },
-        onfocusout: (event) => {
-            dropListItemsBlock.classList.remove('drop-list-items-show');
-            console.log('Расфокусировлись');
-        },
+        // onfocusout: (event) => {
+        //     dropListItemsBlock.classList.remove('drop-list--items--show');
+        //     console.log('Расфокусировались');
+        // },
     });
 
     for (let i = 0; i < items.length; i++) {
         let selectItem = createDiv({
-            classList: ['glass-select-drop-list-value'],
+            classList: ['glass-select--drop-list--value'],
             onclick: () => {
-                dropListItemsBlock.classList.remove('drop-list-items-show');
+                dropListItemsBlock.classList.remove('drop-list--items--show');
 
                 if (main_select_block.values.indexOf(items[i].id) == -1) {
                     main_select_block.values.push(items[i].id);
@@ -110,28 +109,29 @@ function initInterface({
                 }
             }
         });
-        let selectTitle = createTextH({
+        let selectItemTitle = createTextH({
             title: items[i].name,
-            hType: 'h6',
+            hType: "h6",
         });
-        selectItem.appendChild(selectTitle);
+        selectItem.appendChild(selectItemTitle);
         dropListItemsBlock.appendChild(selectItem);
 
         if (i != (items.length - 1)) {
-                    dropListItemsBlock.appendChild(
-                        document.createElement('hr')
-                    );
-                }
+            dropListItemsBlock.appendChild(
+                document.createElement('hr')
+            );
+        }
     }
+
 
     drop_list.appendChild(textInput);
     drop_list.appendChild(dropListItemsBlock);
 
-    main_select_block.appendChild(selecet_title);
+    main_select_block.appendChild(select_title);
     main_select_block.appendChild(drop_list);
     main_select_block.appendChild(selected_items);
 
-    console.log('main_select_block', main_select_block);
+
     select.style.display = 'none';
     select.insertAdjacentElement('afterEnd', main_select_block);
 
@@ -140,34 +140,33 @@ function initInterface({
 
 function createSelectedItem({value, title, main_select_block}) {
     let selectedItem = createDiv({
-        classList: ['glass-select-selected-item', 'glass-block'],
+        classList: ["glass-select--selected-item", "glass-block"],
     });
-    let SelectedTitle = createTextH({title: title, hType: 'h6'});
+    let selectedTitle = createTextH({title: title, hType: "h6"});
     let closeImg = document.createElement('img');
-    closeImg.src = '../static/first_app/images/close.svg';
+    closeImg.src = "../static/first_app/images/close.svg";
     let closeBtn = document.createElement('button');
-    closeBtn.className = 'tag-close';
-    closeBtn.type = 'button';
-    closeBtn.ariaLabel = 'Удалить тэг';
+    closeBtn.className = "tag-close";
+    closeBtn.type = "button";
+    closeBtn.ariaLabel = "Удалить тэг";
     closeBtn.onclick = (event) => {
         main_select_block.values.splice(
             main_select_block.values.indexOf(value), 1
         );
-        event.target.closest('.glass-select-selected-item').remove();
+        event.target.closest('.glass-select--selected-item').remove();
     };
 
     closeBtn.appendChild(closeImg);
-    selectedItem.appendChild(SelectedTitle);
+    selectedItem.appendChild(selectedTitle);
     selectedItem.appendChild(closeBtn);
-    
+
     return selectedItem;
 }
 
-
 function createDiv({
-    name='',
+    name="",
     classList=[],
-    id='',
+    id="",
     onclick=null,
 }) {
     let newDiv = document.createElement('div');
@@ -181,10 +180,10 @@ function createDiv({
 
 function createTextH({
     title,
-    hType='h1',
-    name='',
+    hType="h1",
+    name="",
     classList=[],
-    id='',
+    id="",
 }) {
     let newTextElement = document.createElement(hType);
     newTextElement.name = name;
@@ -196,13 +195,13 @@ function createTextH({
 }
 
 function createInput({
-    type='text',
+    type="text",
     value=null,
-    placeholder='',
-    name='',
+    placeholder="",
+    name="",
     classList=[],
-    id='',
-    onnclick=null,
+    id="",
+    onclick=null,
     onfocus=null,
     onfocusout=null,
 }) {
@@ -213,12 +212,12 @@ function createInput({
     newInputElement.name = name;
     newInputElement.classList.add(...classList);
     newInputElement.id = id;
-    newInputElement.onclick = onnclick;
+    newInputElement.onclick = onclick;
     newInputElement.onfocus = onfocus;
     newInputElement.onfocusout = onfocusout;
 
-    return newInputElement
+    return newInputElement;
 }
+// -----------
 
-// ------------------------
-//drop-list-items-show
+// drop-list--items--show
