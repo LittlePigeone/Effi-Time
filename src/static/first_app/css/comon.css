@@ -327,6 +327,12 @@ hr {
   font-size: 14px;
 }
 
+.glass-select--drop-list--value.selected {
+    background-color: #e3f2fd78; /* или любой другой цвет */
+    font-weight: bold;
+}
+
+
 /* --------------- */
 
 .copy-button {

@@ -45,6 +45,7 @@ class Tag(models.Model):
 class Subtask(models.Model):
     name = models.CharField(max_length=127)
     completed = models.BooleanField(default=False)
+    task = models.ForeignKey(to='Task', on_delete=models.CASCADE, related_name='subtasks')
 
     def __str__(self):
         return self.name
@@ -64,8 +65,6 @@ class Task(models.Model):
     sprint = models.ForeignKey(to=Sprint, on_delete=models.SET_NULL, null=True, default=None)
     tags = models.ManyToManyField(to=Tag)
     category = models.ForeignKey(to=Category, on_delete=models.SET_NULL, null=True)
-    subtasks = models.ManyToManyField(to=Subtask)
-
 
     class Meta:
         db_table = "task"

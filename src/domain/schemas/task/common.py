@@ -43,6 +43,15 @@ class TagRetrieveDTO(BaseModel):
         from_attributes = True
 
 
+class SubtaskCreateDTO(BaseModel):
+    name: str
+    completed: bool = False
+
+
+class SubtaskBulkCreateDTO(BaseModel):
+    subtasks: list[SubtaskCreateDTO] = []
+
+
 class SubtaskRetrieveDTO(BaseModel):
     id: int
     name: str

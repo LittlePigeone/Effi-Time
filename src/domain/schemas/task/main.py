@@ -33,7 +33,7 @@ class TaskRetrieveDTO(BaseModel):
     tags: list[TagRetrieveDTO] = []
     subtasks: list[SubtaskRetrieveDTO] = []
 
-    @field_validator("subtask", "tags", mode="before")
+    @field_validator("subtasks", "tags", mode="before")
     @staticmethod
     def validate_subtask_field(value) -> list:
         return value.all()
