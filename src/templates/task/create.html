@@ -1,0 +1,300 @@
+<link rel="stylesheet" href="../static/quill/css/atom-one-dark.min.css">
+<link rel="stylesheet" href="../static/quill/css/quill.css">
+<link rel="stylesheet" href="../static/first_app/css/view_task.css">
+
+<script src="../static/quill/js/highlight.min.js"></script>
+<script src="../static/quill/js/quill.js"></script>
+<script src="../static/first_app/js/select.js"></script>
+
+
+<div class="task_view_main_block glass-block">
+    <div class="task-view--up-bar"></div>
+    <hr>
+    <!-- <div class="task-view--settings">
+        <div class="task-view--settings--overlay">
+            <input type="checkbox" class="glass-input-checkbox" name="" id="">
+            <h1 class="settings-title task_text">Подзадача с каким-то очень длинным текстом не на одну строчку</h1>
+        </div>
+    </div> -->
+    <div class="task-view--main-info">
+        <h1 class="main-ingo-title">Основное</h1>
+        <input type="text" placeholder="Введите Название задачи..." id="id_name" class="glass-input-text small-border max-width">
+        <div class="glass_input_texture">
+            <div class="main-info-discription"></div>
+        </div>
+        <input type="button" value="Сохранить" class="glass-input-button" id="task-save-button" onclick="create_task()">
+
+    </div>
+    <hr>
+    <div class="task-view--other-parameters">
+        <h1 class="setting-title task_text">Параметры</h1>
+        <div class="set_start_day">
+            <h6 class="other_parameters_text">Начало выполнения</h6>
+            <input type="datetime-local" name="" id="id_start_day" class="glass-input-daytime">
+        </div>
+        <div class="set_end_day">
+            <h6 class="other_parameters_text">Конец выполнения</h6>
+            <input type="datetime-local" name="" id="id_end_day" class="glass-input-daytime">
+        </div>
+        <div class="set_end_day">
+            <h6 class="other_parameters_text">Дэдлайн</h6>
+            <input type="datetime-local" name="" id="id_deadline_day" class="glass-input-daytime">
+        </div>
+
+        <div class="sphere-select" id=""></div>
+
+        <div class="importsnce-select" id=""></div>
+
+        <div class="status-select" id=""></div>
+
+        <div class="subtasks-editor">
+            <div class="subtasks-editor-header">
+                <h6 class="other_parameters_text">Подзадачи</h6>
+                <button type="button" class="glass-input-button small-border subtasks-add-btn" onclick="addSubtaskRow()">+</button>
+            </div>
+            <div class="subtasks-editor-list" id="subtasks-editor-list"></div>
+        </div>
+
+        <div class="sprint-select" id=""></div>
+
+        <div class="tags-select" id=""></div>
+    </div>
+</div>
+
+<div class="task-save-overlay hide" id="task-save-overlay" aria-hidden="true">
+    <div class="task-save-overlay-card glass-block">
+        <div class="task-save-spinner" aria-hidden="true"></div>
+        <div class="task-save-overlay-title">Сохраняю задачу…</div>
+        <div class="task-save-overlay-subtitle" id="task-save-overlay-text">Это может занять до ~30 секунд</div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    const toolbar = [
+        [{ header: [1, 2, 3, 4, false] }],
+        ['bold', 'italic', 'underline', 'strike'],
+        [{ list: 'ordered' }, { list: 'bullet' }],
+        ['link', 'blockquote', 'code-block'],
+        [{ align: [] }],
+        ['image'] // Добавляем кнопку для вставки картинок
+    ];
+
+    const quill = new Quill('.main-info-discription', {
+        theme: 'snow',
+        modules: {
+            toolbar: {
+                container: toolbar,
+                handlers: {
+                    image: () => this.handleImageUpload()
+                }
+            },
+            imageResize: typeof window.ImageResize !== 'undefined' ? {
+                parchment: window.Quill.import('parchment'),
+                modules: [ 'Resize', 'DisplaySize', 'Toolbar' ]
+            } : undefined
+        }
+    });
+</script>
+
+<script type="text/javascript">
+
+    var sphere = null;
+    var importsnce = null;
+    var status_select = null;
+    var sprint = null;
+    var tags = null;
+
+    function addSubtaskRow(initial = {}) {
+        const list = document.getElementById('subtasks-editor-list');
+        if (!list) return;
+
+        const row = document.createElement('div');
+        row.className = 'subtask-row';
+
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'glass-input-text small-border max-width';
+        input.placeholder = 'Введите Название подзадачи...';
+        input.value = initial.name ?? '';
+        if (initial.id) input.dataset.subtaskId = String(initial.id);
+
+        row.appendChild(input);
+        list.appendChild(row);
+    }
+
+    function getSubtasksPayload() {
+        const list = document.getElementById('subtasks-editor-list');
+        if (!list) return [];
+        const inputs = Array.from(list.querySelectorAll('input[data-subtask-id], input:not([data-subtask-id])'));
+        const payload = [];
+        inputs.forEach(inp => {
+            const name = (inp.value ?? '').toString().trim();
+            if (!name) return;
+            const id = inp.dataset.subtaskId ? parseInt(inp.dataset.subtaskId, 10) : null;
+            if (id) payload.push({ id, name });
+            else payload.push({ name });
+        });
+        return payload;
+    }
+
+    (async function initCreateOrEditForm() {
+        const editTaskId = window.editTaskId ?? null;
+
+        const [pageInfo, taskData] = await Promise.all([
+            request({ url: '/task/creating/' }),
+            editTaskId ? request({ url: `/task/${editTaskId}/view/` }) : Promise.resolve(null),
+        ]);
+
+        status_select = initGlassSelect({
+            items: pageInfo.statuses,
+            selector: '.status-select',
+            title: 'Статус',
+            value: taskData?.status?.id ?? null,
+        });
+        sphere = initGlassSelect({
+            items: pageInfo.categories,
+            selector: '.sphere-select',
+            title: 'Сфера',
+            value: taskData?.category?.id ?? null,
+        });
+        sprint = initGlassSelect({
+            items: pageInfo.sprints,
+            selector: '.sprint-select',
+            title: 'Спринты',
+            value: taskData?.sprint?.id ?? null,
+        });
+        tags = initGlassSelect({
+            items: pageInfo.tags,
+            selector: '.tags-select',
+            title: 'Тэги',
+            multiple: true,
+            values: Array.isArray(taskData?.tags) ? taskData.tags.map(t => t.id) : null,
+        });
+
+        if (editTaskId && taskData) {
+            const saveBtn = document.getElementById('task-save-button');
+            if (saveBtn) saveBtn.value = 'Сохранить изменения';
+
+            document.getElementById('id_name').value = taskData.name ?? '';
+
+            const toDatetimeLocal = (value) => {
+                if (!value) return '';
+                const d = new Date(value);
+                const pad = (n) => String(n).padStart(2, '0');
+                return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+            };
+
+            document.getElementById('id_start_day').value = toDatetimeLocal(taskData.started_at);
+            document.getElementById('id_end_day').value = toDatetimeLocal(taskData.finished_at);
+            document.getElementById('id_deadline_day').value = toDatetimeLocal(taskData.deadline_at);
+            quill.root.innerHTML = taskData.description ?? '';
+
+            const list = document.getElementById('subtasks-editor-list');
+            if (list) list.innerHTML = '';
+            if (Array.isArray(taskData.subtasks) && taskData.subtasks.length) {
+                taskData.subtasks.forEach(s => addSubtaskRow({ id: s.id, name: s.name }));
+            } else {
+                addSubtaskRow();
+            }
+        } else {
+            addSubtaskRow();
+        }
+    })();
+
+
+
+    function get_select_data() {
+        console.log(sphere.values);
+    }
+</script>
+
+<script type="text/javascript">
+    async function create_task() {
+        const editTaskId = window.editTaskId ?? null;
+        const emptyToNull = (v) => {
+            const s = (v ?? '').toString().trim();
+            return s ? s : null;
+        };
+        const saveBtn = document.getElementById('task-save-button');
+        const overlay = document.getElementById('task-save-overlay');
+        const overlayText = document.getElementById('task-save-overlay-text');
+        const initialBtnText = saveBtn ? saveBtn.value : null;
+        let phaseTimer = null;
+
+        const setSavingState = (saving, opts = {}) => {
+            if (saveBtn) {
+                saveBtn.disabled = saving;
+                saveBtn.value = saving ? (opts.buttonText ?? 'Сохраняю…') : (initialBtnText ?? 'Сохранить');
+            }
+            if (overlay) {
+                overlay.classList.toggle('hide', !saving);
+                overlay.setAttribute('aria-hidden', saving ? 'false' : 'true');
+            }
+            if (overlayText && opts.overlayText) {
+                overlayText.textContent = opts.overlayText;
+            }
+        };
+
+        let body = {
+            category_id: sphere.values,
+            status_id: status_select.values,
+            // importsnce: importsnce.values,
+            // subtask: subtask.values,
+            sprint_id: sprint.values,
+            tags: Array.isArray(tags.values) ? tags.values : (tags.values ? [tags.values] : []),
+            subtasks: getSubtasksPayload(),
+            description: quill.root.innerHTML,
+            name: document.getElementById('id_name').value,
+            started_at: emptyToNull(document.getElementById('id_start_day').value),
+            finished_at: emptyToNull(document.getElementById('id_end_day').value),
+            deadline_at: emptyToNull(document.getElementById('id_deadline_day').value),
+        };
+
+        const shouldAiPlan = !body.started_at && !!(body.deadline_at || body.finished_at);
+        setSavingState(true, {
+            overlayText: shouldAiPlan ? 'Планирую время с AI…' : 'Отправляю данные…',
+        });
+        if (shouldAiPlan) {
+            phaseTimer = setTimeout(() => {
+                setSavingState(true, { overlayText: 'Подбираю лучшее окно до дедлайна…' });
+            }, 2500);
+        }
+
+        try {
+            if (editTaskId) {
+                const res = await request({
+                    url: `/task/${editTaskId}/updating/`,
+                    method: "PATCH",
+                    body: body,
+                });
+                if (res === undefined) {
+                    alert('Ошибка сохранения задачи');
+                    return;
+                }
+                let view_task_section = document.querySelector('.view_task_section');
+                view_task_section.style.display = 'none';
+                view_task_section.innerHTML = '';
+                window.editTaskId = null;
+                open_task_by_id(editTaskId);
+            } else {
+                const data = await request({
+                    url: '/task/creating/',
+                    method: "POST",
+                    body: body,
+                });
+                if (!data || !data.id) {
+                    alert('Ошибка создания задачи');
+                    return;
+                }
+                let view_task_section = document.querySelector('.view_task_section');
+                view_task_section.style.display = 'none';
+                view_task_section.innerHTML = '';
+
+                open_task_by_id(data.id);
+            }
+        } finally {
+            if (phaseTimer) clearTimeout(phaseTimer);
+            setSavingState(false);
+        }
+    }
+</script>

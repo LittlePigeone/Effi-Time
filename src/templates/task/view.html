@@ -1,0 +1,434 @@
+<link rel="stylesheet" href="../static/quill/css/atom-one-dark.min.css">
+<link rel="stylesheet" href="../static/quill/css/quill.css">
+<link rel="stylesheet" href="../static/first_app/css/view_task.css">
+
+
+<script src="../static/quill/js/highlight.min.js"></script>
+<script src="../static/quill/js/quill.js"></script>
+
+<script src="../static/common/js/copy.js"></script>
+
+<div class="task_view_main_block glass-block">
+            <div class="task-view--up-bar">
+                <div class="close-button" onclick="closeTaskView()">
+                    <img src="../static/first_app/images/close.svg" alt="Close">
+                </div>
+                <input type="button" value="Изменить" class="glass-input-button small-border" onclick="window.open_task_edit_by_id(window.currentTaskId)">
+            </div>
+            <hr>
+            <!-- <div class="task-view--settings">
+                <div class="task-view--settings--overlay">
+                    <h2 class="settings-title task_text">Подзадача с каким-то очень длинным текстом не на одну строчку</h2>
+                </div>
+            </div> -->
+            <div class="task-view--main-info">
+                <h1 class="main-ingo-title">Основное</h1>
+                <div class="task-title-block">
+                    <h2 class="task-title" id="task-title"></h2>
+                    <div class="copy-button" onclick="copy_text(this)">
+                        <img src="../static/first_app/images/copy.svg" alt="">
+                    </div>
+                </div>
+                <!-- Описание -->
+                 <div class="glass_input_texture" style="margin-top: 10px;">
+                    <div class="main-info-discription" id="task-description"></div>
+                </div>
+            </div>
+            <hr>
+            <div class="task-view--other-parameters">
+                <h1 class="settings-title task_text">Параметры</h1>
+                <div class="set_start_day">
+                    <h6 class="other_parameters_text">Начало выполнения</h6>
+                    <h6 class="parameter-title" id="task-started-at">—</h6>
+                </div>
+                <div class="set_end_day">
+                    <h6 class="other_parameters_text">Конец выполнения</h6>
+                    <h6 class="parameter-title" id="task-finished-at">—</h6>
+                </div>
+                <div class="set_end_day">
+                    <h6 class="other_parameters_text">Дэдлайн</h6>
+                    <h6 class="parameter-title" id="task-deadline-at">—</h6>
+                </div>
+                <div class="status">
+                    <h6 class="other_parameters_text">Статус</h6>
+                    <div class="parameters-items">
+                        <div class="glass-select-selected-item glass-block">
+                            <h6 id="task-status">—</h6>
+                        </div>
+                    </div>
+                </div>
+                <div class="sprint">
+                    <h6 class="other_parameters_text">Спринт</h6>
+                    <h6 class="parameter-title" id="task-sprint">—</h6>
+                </div>
+                <div class="tags">
+                    <h6 class="other_parameters_text">Тэги</h6>
+                    <div class="parameters-items" id="task-tags">
+                        <!-- Tags will be injected here -->
+                    </div>
+                </div>
+
+                <div class="subtasks-block">
+                    <h1 class="subtitle">Подзадачи</h1>
+                    <div class="subtask-items" id="task-subtasks">
+                         <!-- Subtasks will be injected here -->
+                    </div>
+                </div>
+            </div>
+            <hr>
+            <div class="comment-history-section">
+                <div class="comment-history-tabs">
+                    <h1 id="comment-tab" class="active" onclick='show_section(this)'>Коментраии</h1>
+                    <h1 id="history-tab" onclick='show_section(this)'>История</h1>
+                    <hr id="tab-indicator">
+                </div>
+                <hr>
+                <div class="tab-section comment-section">
+                    <div class="comment-field-block">
+                        <div class="glass_input_texture">
+                            <div class="comment-field" id="comment-editor"></div>
+                        </div>
+                        <input type="button" value="Отправить" class="glass-input-button small-border" onclick="window.sendComment()">
+
+                        <div class="comments-list" id="comments-container">
+                            <!-- Comments will be injected here -->
+                        </div>
+
+                        <script type="text/javascript">
+                            (function() {
+                                const toolbar = [
+                                [{ header: [1, 2, 3, 4, false] }],
+                                ['bold', 'italic', 'underline', 'strike'],
+                                [{ list: 'ordered' }, { list: 'bullet' }],
+                                ['link', 'blockquote', 'code-block'],
+                                [{ align: [] }],
+                                ['image'] // Add image button
+                            ];
+
+                            // We attach to window to make it accessible to sendComment
+                            window.commentTextField = new Quill('#comment-editor', {
+                                theme: 'snow',
+                                modules: {
+                                    toolbar: {
+                                        container: toolbar,
+                                        handlers: {
+                                            // Default image handler is usually sufficient for base64, 
+                                            // but if you have a custom upload handler, use it here.
+                                            // image: () => this.handleImageUpload() 
+                                        }
+                                    },
+                                    // Add imageResize if the library is loaded
+                                    imageResize: typeof window.ImageResize !== 'undefined' ? {
+                                        parchment: window.Quill.import('parchment'),
+                                        modules: [ 'Resize', 'DisplaySize', 'Toolbar' ]
+                                    } : undefined
+                                }
+                            });
+                        })();
+                        </script>
+                    </div>
+                    <div class=""></div>
+                </div>
+                <div class="tab-section history-section hide">
+                    <div class="history-list" id="history-container"></div>
+                </div>
+            </div>
+        </div>
+
+<script type="text/javascript">
+    var tabIndicator = document.getElementById('tab-indicator');
+
+    function show_section(element) {
+        let idName = element.id.split('-')[0];
+        let tabsBlock = element.parentNode;
+
+        tabsBlock.querySelectorAll('h1')
+            .forEach(h => h.classList.toggle('active', h === element));
+
+        const sectionSelectors = Array.from(tabsBlock.querySelectorAll('h1'))
+            .map(h => '.' + h.id.split('-')[0] + '-section')
+            .join(',');
+        document.querySelectorAll(sectionSelectors).forEach(sec => {
+            sec.style.display = sec.classList.contains(idName + '-section') ? '' : 'none';
+        });
+
+        const p = tabsBlock.getBoundingClientRect();
+        const r = element.getBoundingClientRect();
+        tabIndicator.style.left  = (r.left - p.left) + 'px';
+        tabIndicator.style.top   = (r.top  - p.top + r.height) + 'px';
+        tabIndicator.style.width = r.width + 'px';
+
+        let sections = document.getElementsByClassName('tab-section');
+        for (let i = 0; i < sections.length; i++) {
+            if (sections[i].classList.contains(`${idName}-section`)) {
+                sections[i].classList.remove('hide');
+            }
+            else {
+                sections[i].classList.add('hide');
+            }
+        }
+
+        if (idName === 'history' && window.currentTaskId) {
+            window.loadHistory(window.currentTaskId);
+        }
+    }
+</script>
+
+<script type="text/javascript">
+    // Define functions on window to ensure they are accessible globally and persist/overwrite correctly
+    
+    window.currentTaskId = null;
+
+    window.populateTaskData = function(task) {
+        window.currentTaskId = task.id;
+        document.getElementById('task-title').textContent = task.name;
+        document.getElementById('task-description').innerHTML = task.description;
+        
+        const formatDate = (dateStr) => {
+            if (!dateStr) return '—';
+            return new Date(dateStr).toLocaleString('ru-RU', {
+                day: '2-digit', month: '2-digit', year: 'numeric', 
+                hour: '2-digit', minute: '2-digit'
+            });
+        };
+
+        document.getElementById('task-started-at').textContent = formatDate(task.started_at);
+        document.getElementById('task-finished-at').textContent = formatDate(task.finished_at);
+        document.getElementById('task-deadline-at').textContent = formatDate(task.deadline_at);
+        
+        if (task.status) {
+             document.getElementById('task-status').textContent = task.status.name;
+        }
+
+        if (task.sprint) {
+            document.getElementById('task-sprint').textContent = task.sprint.name;
+        }
+
+        const tagsContainer = document.getElementById('task-tags');
+        tagsContainer.innerHTML = '';
+        if (task.tags) {
+            task.tags.forEach(tag => {
+                tagsContainer.innerHTML += `
+                    <div class="glass-select-selected-item glass-block">
+                        <h6>${tag.name}</h6>
+                    </div>
+                `;
+            });
+        }
+
+        const subtasksContainer = document.getElementById('task-subtasks');
+        subtasksContainer.innerHTML = '';
+        if (task.subtasks) {
+            task.subtasks.forEach(sub => {
+                subtasksContainer.innerHTML += `
+                    <div class="subtask">
+                        <input type="checkbox" class="glass-input-checkbox" ${sub.completed ? 'checked' : ''} onchange="window.toggleSubtaskCompleted(${task.id}, ${sub.id}, this)">
+                        <h6 class="task_subtask_title task_text">${sub.name}</h6>
+                    </div>
+                `;
+            });
+        }
+
+        window.loadComments(task.id);
+        window.loadHistory(task.id);
+    };
+
+    window.loadComments = function(taskId) {
+       request({
+           url: `/task/${taskId}/comments/`,
+       }).then(comments => {
+           if (!comments || !Array.isArray(comments)) return; // Safety check
+           const container = document.getElementById('comments-container');
+           container.innerHTML = '';
+           comments.forEach(comment => {
+               window.addCommentToDOM(comment, 'beforeend');
+           });
+       });
+    };
+
+    window.addCommentToDOM = function(comment, position = 'afterbegin') {
+       const container = document.getElementById('comments-container');
+       const dateStr = new Date(comment.created_at).toLocaleString('ru-RU', {
+           day: '2-digit', month: '2-digit', year: 'numeric', 
+           hour: '2-digit', minute: '2-digit'
+       });
+
+       const html = `
+           <div class="user-comment-block">
+               <div class="user-photo">
+                   <div class="image-small image"></div>
+               </div>
+               <div class="user-comment">
+                   <div class="user-comment-title">
+                       <div class="user-comment-name">${comment.user_name}</div>
+                       <div class="user-comment-date">${dateStr}</div>
+                   </div>
+                   <div class="user-comment-text">
+                       <div class="ql-snow">
+                           <div class="ql-editor">${comment.text}</div>
+                       </div>
+                   </div>
+               </div>
+           </div>
+       `;
+       container.insertAdjacentHTML(position, html);
+    };
+
+    window.sendComment = function() {
+       if (!window.currentTaskId) return;
+       // Access global commentTextField
+       if (!window.commentTextField) {
+           console.error("Editor not initialized");
+           return;
+       }
+       
+       const text = window.commentTextField.root.innerHTML;
+       if (window.commentTextField.getText().trim().length === 0) return;
+
+       request({
+           url: `/task/${window.currentTaskId}/comments/`,
+           method: 'POST',
+           body: { text: text }
+       }).then(newComment => {
+           window.addCommentToDOM(newComment);
+           window.commentTextField.setContents([]); 
+       }).catch(err => {
+           console.error(err);
+           alert('Ошибка отправки комментария');
+       });
+    };
+
+    window.loadHistory = function(taskId) {
+       request({
+           url: `/task/${taskId}/history/`,
+       }).then(items => {
+           if (!items || !Array.isArray(items)) return;
+           const container = document.getElementById('history-container');
+           if (!container) return;
+           container.innerHTML = '';
+           items.forEach(item => {
+               window.addHistoryToDOM(item, 'beforeend');
+           });
+       });
+    };
+
+    window.addHistoryToDOM = function(item, position = 'afterbegin') {
+        const container = document.getElementById('history-container');
+        if (!container) return;
+
+        const wrapper = document.createElement('div');
+        wrapper.className = 'history-item';
+
+        const title = document.createElement('div');
+        title.className = 'history-item-title';
+
+        const left = document.createElement('div');
+        left.className = 'history-item-left';
+
+        const field = document.createElement('div');
+        field.className = 'history-item-field';
+        field.textContent = item.field || '—';
+
+        const meta = document.createElement('div');
+        meta.className = 'history-item-meta';
+
+        const user = document.createElement('span');
+        user.className = 'history-item-user';
+        user.textContent = item.user_name || '';
+
+        const date = document.createElement('span');
+        date.className = 'history-item-date';
+        date.textContent = new Date(item.created_at).toLocaleString('ru-RU', {
+            day: '2-digit', month: '2-digit', year: 'numeric',
+            hour: '2-digit', minute: '2-digit'
+        });
+
+        if (user.textContent) {
+            meta.appendChild(user);
+        }
+        meta.appendChild(date);
+
+        left.appendChild(field);
+        left.appendChild(meta);
+
+        title.appendChild(left);
+
+        const change = document.createElement('div');
+        change.className = 'history-item-change';
+
+        const oldVal = (item.old_value ?? '').toString();
+        const newVal = (item.new_value ?? '').toString();
+        if (oldVal || newVal) {
+            const oldSpan = document.createElement('span');
+            oldSpan.className = 'history-item-old';
+            oldSpan.textContent = oldVal || '—';
+
+            const arrow = document.createElement('span');
+            arrow.className = 'history-item-arrow';
+            arrow.textContent = '→';
+
+            const newSpan = document.createElement('span');
+            newSpan.className = 'history-item-new';
+            newSpan.textContent = newVal || '—';
+
+            change.appendChild(oldSpan);
+            change.appendChild(arrow);
+            change.appendChild(newSpan);
+            wrapper.appendChild(title);
+            wrapper.appendChild(change);
+        } else {
+            wrapper.appendChild(title);
+        }
+
+        if (position === 'beforeend') {
+            container.appendChild(wrapper);
+        } else {
+            container.prepend(wrapper);
+        }
+    };
+
+    if (typeof window.open_task_edit_by_id !== 'function') {
+        window.open_task_edit_by_id = async function(task_id) {
+            window.editTaskId = task_id;
+
+            const viewHtml = await request({
+                url: '/task/create/',
+                method: 'GET'
+            });
+
+            const viewSection = document.querySelector('.view_task_section');
+            viewSection.innerHTML = '';
+
+            async function setHTMLWithScripts(container, html) {
+                container.innerHTML = html;
+                const scripts = Array.from(container.querySelectorAll("script"));
+                for (const oldScript of scripts) {
+                    const newScript = document.createElement("script");
+                    for (const attr of oldScript.attributes) {
+                        newScript.setAttribute(attr.name, attr.value);
+                    }
+                    if (oldScript.src) {
+                        await new Promise((resolve, reject) => {
+                            newScript.onload = resolve;
+                            newScript.onerror = reject;
+                            document.body.appendChild(newScript);
+                        });
+                    } else {
+                        newScript.textContent = oldScript.textContent;
+                        document.body.appendChild(newScript);
+                    }
+                    oldScript.remove();
+                }
+            }
+
+            await setHTMLWithScripts(viewSection, viewHtml);
+            viewSection.style.display = 'flex';
+
+            viewSection.addEventListener('click', (e) => {
+                if (e.target === viewSection) {
+                    closeTaskView();
+                }
+            });
+        }
+    }
+</script>

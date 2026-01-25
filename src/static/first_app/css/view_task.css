@@ -1,0 +1,504 @@
+.view_task_section {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1000;
+    display: flex;
+    justify-content: flex-end;
+    transition: all 0.3s ease;
+}
+
+.task_view_main_block {
+    width: 660px;
+    min-height: 400px;
+    height: 100vh;
+    max-height: 100vh;
+    padding-left: 25px;
+    border-bottom-right-radius: 0px;
+    border-top-right-radius: 0px;
+    
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+
+    overflow-y: auto;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+.task-view--up-bar {
+    width: 100%;
+    height: 40px;
+    margin-top: 10px;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    padding-right: 25px;
+    box-sizing: border-box;
+}
+
+.close-button {
+    cursor: pointer;
+    width: 24px;
+    height: 24px;
+    transition: opacity 0.2s;
+}
+
+.close-button:hover {
+    opacity: 0.7;
+}
+
+.close-button img {
+    width: 100%;
+    height: 100%;
+}
+
+.task-view--settings, .task-view--main-info, .task-view--other-parameters {
+    width: 100%;
+    height: fit-content;
+    display: flex;
+    flex-direction: column;
+}
+
+.task-view--settings {
+    gap: 5px;
+}
+
+.task-view--settings--overlay {
+    display: flex;
+    align-items: center;
+    justify-content: start;
+    gap: 10px;
+}
+
+.settings-title {
+    width: 100%;
+    color: #373738;
+    font-size: 24px;
+    overflow: hidden;
+}
+
+.setting-title {
+    width: 100%;
+    color: rgb(85, 85, 85);
+    font-size: 20px;
+    overflow: hidden;
+}
+
+.task-view--main-info {
+    padding-right: 25px;
+    box-sizing: border-box;
+    gap: 5px;
+}
+
+.main-ingo-title, .task-view--other-parameters {
+    font-size: 24px;
+    color: #373738;
+}
+
+.task-view--other-parameters {
+    gap: 5px;
+}
+
+.set_start_day, .set_end_day, .status, .sprint, .tags {
+    width: 100%;
+    height: fit-content;
+    display: flex;
+    align-items: center;
+}
+
+.other_parameters_text {
+    font-size: 14px;
+    width: 140px;
+}
+
+/* ---------------------------- */
+
+.task-title-block {
+    width: 100%;
+    border: 1px solid rgba(255, 255, 255, .2);
+    border-radius: 10px;
+    padding: 5px 9px;
+    display: flex;
+    align-items: start;
+}
+
+.task-title {
+    font-size: 20px;
+    color: #373738;
+    width: 100%;
+}
+
+.parameter-title {
+    font-size: 12px;
+    color: #373738;
+}
+
+.parameters-items {
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+    width: 70%;
+}
+
+.subtitle {
+    font-size: 20px;
+    color: #373738;
+}
+
+.subtask-items {
+    width: 100%;
+    margin-top: 5px;
+    gap: 5px;
+    display: flex;
+    flex-direction: column;
+}
+
+.subtasks-editor {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.subtasks-editor-header {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.subtasks-add-btn {
+    width: 38px;
+    min-width: 38px;
+    padding: 0;
+    height: 34px;
+}
+
+.subtasks-editor-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    width: 100%;
+}
+
+.subtask-row {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.task-save-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.35);
+    backdrop-filter: blur(6px);
+}
+
+.task-save-overlay-card {
+    width: min(520px, calc(100vw - 40px));
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: center;
+    padding: 18px;
+    box-sizing: border-box;
+    border-radius: 18px;
+}
+
+.task-save-spinner {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: 3px solid rgba(55, 55, 56, 0.2);
+    border-top-color: rgba(55, 55, 56, 0.9);
+    animation: task-save-spin 0.9s linear infinite;
+}
+
+.task-save-overlay-title {
+    font-size: 16px;
+    color: #373738;
+}
+
+.task-save-overlay-subtitle {
+    font-size: 12px;
+    color: rgba(55, 55, 56, 0.75);
+    text-align: center;
+}
+
+@keyframes task-save-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.task_subtask_title {
+    margin-left: 5px;
+    font-size: 16px;
+    color: #373738;
+    width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Коментраии и истории */
+/* -------------------- */
+
+.comment-history-section{
+    width: 100%;
+    height: fit-content;
+    display: flex;
+    flex-direction: column;
+    padding-top: 30px;
+}
+
+.comment-history-tabs{
+    width: fit-content;
+    display: flex;
+    align-items: center;
+    justify-content: start;
+    gap: 20px;
+    position: relative;
+}
+
+.comment-history-tabs #comment-tab,
+.comment-history-tabs #history-tab {
+    font-size: 16px !important;
+    cursor: pointer;
+    color: #373738;
+}
+
+#tab-indicator {
+    border: none;
+    outline: none;
+    width: 100px;
+    height: 3px;
+    background-color: #8b93cfc0;
+    position: absolute;
+    bottom: -2px;
+    transition: all .5s ease;
+    left: 0px;
+}
+
+.comment-section {
+    margin: 10px 0px;
+    margin-right: 15px;
+}
+
+.comment-field-block {
+    display: flex;
+    flex-direction: column;
+    align-items: end;
+    gap: 7px;
+}
+
+.comments-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    height: fit-content;
+    width: 100%;
+}
+
+.history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+}
+
+.history-section {
+    font-size: 12px;
+}
+
+.history-section * {
+    font-size: inherit !important;
+}
+
+.history-item:nth-child(even) {
+    background-color: #FFFFFF28;
+}
+
+.history-item {
+    width: 100%;
+    height: fit-content;
+    border-radius: 5px;
+    padding: 10px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.history-item-title {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.history-item-left {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    width: 100%;
+}
+
+.history-item-field {
+    font-size: 12px !important;
+    color: #373738;
+    line-height: 1.35;
+}
+
+.history-item-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px !important;
+    color: #212122;
+}
+
+.history-item-change {
+    font-size: 12px !important;
+    color: #373738;
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    line-height: 1.35;
+}
+
+.history-item-arrow {
+    color: #212122;
+}
+
+/* Блок с текстом коммента */
+
+.comments-list > .user-comment-block:nth-child(even) {
+    background-color: #FFFFFF28;
+}
+
+.user-comment-block {
+    width: 100%;
+    height: fit-content;
+    display: flex;
+    align-items: flex-start;
+
+    border-radius: 5px;
+    padding: 10px;
+    box-sizing: border-box;
+}
+
+.user-photo {
+    height: 100%;
+    width: 40px;
+    margin: 0px 10px 10px 0px;
+}
+
+.user-comment-title {
+    display: flex;
+    align-items: center;
+    justify-content: start;
+    gap: 8px;
+}
+
+.user-comment-name {
+    font-size: 16px;
+}
+
+.user-comment-date {
+    font-size: 14px;
+    color: #212122;
+}
+
+.user-comment-text {
+    margin-top: 8px;
+    font-size: 12px;
+    color: #373738;
+}
+
+.user-comment-text .ql-snow {
+    background: transparent;
+}
+
+.user-comment-text .ql-editor {
+    padding: 0;
+    font-family: inherit;
+    font-size: 12px;
+    color: #373738;
+    line-height: 1.35;
+    font-weight: 400;
+}
+
+.user-comment-text .ql-editor ol,
+.user-comment-text .ql-editor ul {
+    padding-left: 1.6em !important;
+}
+
+.user-comment-text .ql-editor li {
+    margin: 0;
+}
+
+.comment-field-block .ql-snow {
+    background: transparent;
+}
+
+.comment-field-block .ql-editor {
+    font-family: inherit;
+    font-size: 12px;
+    color: #373738;
+}
+
+.main-info-discription {
+    font-size: 12px;
+    line-height: 1.35;
+    color: #373738;
+}
+
+.main-info-discription * {
+    font-size: inherit !important;
+}
+
+.main-info-discription ol,
+.main-info-discription ul {
+    padding-left: 1.6em !important;
+}
+
+.main-info-discription .ql-editor {
+    font-family: inherit;
+    font-size: 12px !important;
+    line-height: 1.35;
+    color: #373738;
+}
+
+.comments-list .ql-editor {
+    font-size: 12px;
+}
+
+.user-comment-text .ql-editor p,
+.user-comment-text .ql-editor ol,
+.user-comment-text .ql-editor ul,
+.user-comment-text .ql-editor pre,
+.user-comment-text .ql-editor blockquote,
+.user-comment-text .ql-editor h1,
+.user-comment-text .ql-editor h2,
+.user-comment-text .ql-editor h3,
+.user-comment-text .ql-editor h4,
+.user-comment-text .ql-editor h5,
+.user-comment-text .ql-editor h6 {
+    margin: 0;
+}
+
+.user-comment-text .ql-editor img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 6px;
+}
+

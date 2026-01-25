@@ -1,0 +1,182 @@
+{% extends 'index.html' %}
+
+{% block links_block %}
+    <link rel="stylesheet" href="../static/first_app/css/index.css">
+    <style>
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            min-width: 350px;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+        }
+        .modal-title {
+            text-align: center;
+            color: rgb(70, 70, 70);
+            font-size: 24px;
+            font-weight: 300;
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+        .modal-input-custom {
+            width: 100%;
+            height: 40px;
+            padding: 0 15px;
+            box-sizing: border-box;
+            font-size: 16px;
+            color: rgb(50, 50, 50);
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            outline: none;
+            border-radius: 12px;
+            box-shadow: inset 1px 1px 4px rgba(0, 0, 0, 0.1);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.6);
+            border-right: 1px solid rgba(255, 255, 255, 0.6);
+            transition: all 0.2s ease;
+        }
+        .modal-input-custom:focus {
+            background: rgba(255, 255, 255, 0.3);
+            box-shadow: inset 2px 2px 5px rgba(0, 0, 0, 0.15);
+        }
+        .modal-input-custom::placeholder {
+            color: rgba(70, 70, 70, 0.6);
+        }
+        .modal-buttons {
+            display: flex;
+            justify-content: space-between;
+            gap: 15px;
+            margin-top: 10px;
+        }
+        .modal-btn {
+            flex: 1;
+            padding: 10px;
+            border-radius: 12px;
+            cursor: pointer;
+            border: none;
+            font-size: 16px;
+            font-weight: 500;
+            transition: all 0.2s;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: rgba(255, 255, 255, 0.25);
+            box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
+            border-top: 1px solid rgba(255, 255, 255, 0.6);
+            border-left: 1px solid rgba(255, 255, 255, 0.6);
+            color: rgb(70, 70, 70);
+        }
+        .modal-btn:hover {
+            transform: translateY(-1px);
+            background: rgba(255, 255, 255, 0.4);
+            box-shadow: 3px 3px 6px rgba(0, 0, 0, 0.15);
+        }
+        .modal-btn:active {
+            transform: translateY(1px);
+            box-shadow: inset 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .save-btn {
+            background: rgba(255, 255, 255, 0.25);
+        }
+        .cancel-btn {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .right_panel {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: row;
+            flex-wrap: wrap;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+     <div class="right_panel glass-block" id="category-container">
+         <div class="block glass-block" id="add-category-btn" style="cursor: pointer;">
+             <h2>+</h2>
+         </div>
+     </div>
+
+     <!-- Modal -->
+     <div class="modal-overlay" id="create-modal">
+         <div class="glass-block modal-content">
+             <h2 class="modal-title">Новая категория</h2>
+             <input type="text" id="category-name" class="modal-input-custom" placeholder="Название...">
+             <div class="modal-buttons">
+                 <button class="modal-btn cancel-btn" onclick="closeModal()">Отмена</button>
+                 <button class="modal-btn save-btn" onclick="createCategory()">Создать</button>
+             </div>
+         </div>
+     </div>
+
+    <script type="text/javascript">
+        const container = document.querySelector('#category-container');
+        const modal = document.getElementById('create-modal');
+        const addBtn = document.getElementById('add-category-btn');
+        const nameInput = document.getElementById('category-name');
+
+        // Open Modal
+        addBtn.addEventListener('click', () => {
+            modal.style.display = 'flex';
+            nameInput.focus();
+        });
+
+        // Close Modal
+        function closeModal() {
+            modal.style.display = 'none';
+            nameInput.value = '';
+        }
+
+        // Close on outside click
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) closeModal();
+        });
+
+        // Create Category
+        function createCategory() {
+            const name = nameInput.value;
+            if (!name) return;
+
+            request({
+                url: 'category/create/',
+                method: 'POST',
+                body: { name: name }
+            }).then(data => {
+                addCategoryToDOM(data);
+                closeModal();
+            });
+        }
+
+        // Add to DOM
+        function addCategoryToDOM(category) {
+            const html = `
+                <div class="block glass-block" data-id='${category.id}'>
+                    <h1 class="button_text">${category.name}</h1>
+                </div>
+            `;
+            addBtn.insertAdjacentHTML('beforebegin', html);
+        }
+
+        // Load Categories
+        request({
+            url: 'category/list/',
+        }).then(data => {
+            console.log(data);
+            data.forEach(cat => {
+                addCategoryToDOM(cat);
+            });
+        })
+    </script>
+{% endblock %}

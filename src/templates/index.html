@@ -1,0 +1,197 @@
+{% load static %}
+
+
+<!doctype html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>{{ title }}</title>
+
+    <link rel="stylesheet" href="../static/first_app/css/index.css">
+    <link rel="stylesheet" href="../static/first_app/css/comon.css">
+    <script src="{% static 'common/js/request.js' %}"></script>
+
+    {% block links_block %}
+    {% endblock %}
+
+    {% block scripts_block %}
+    {% endblock %}
+</head>
+<body>
+    {% csrf_token %}
+    <section class="main_section">
+        <div class="left_panel glass-block">
+            <div class="image"></div>
+
+            <div class="navigation">
+                <div class="navigation_button glass-block">
+                    <a href="/" class="smaller_text">Сферы жизни</a>
+                </div>
+
+                <div class="navigation_button glass-block">
+                    <a href="/calendar/" class="smaller_text">Календарь</a>
+                </div>
+
+                <div class="navigation_button glass-block">
+                    <a href="/canban/" class="smaller_text">Канбан доска</a>
+                </div>
+
+                <div class="navigation_button glass-block">
+                    <a href="#" class="smaller_text">Активновсти</a>
+                </div>
+            </div>
+        </div>
+
+        {% block content %}
+        {% endblock %}
+    </section>
+
+    <section class="view_task_section" style="display: none;"></section>
+
+    <script type="text/javascript">
+        async function open_task_by_id(task_id) {
+            // 1. Get the HTML template for viewing a task
+            const viewHtml = await request({
+                url: '/task/view/',
+                method: 'GET'
+            });
+
+            const viewSection = document.querySelector('.view_task_section');
+            viewSection.innerHTML = ''; // Clear previous content
+            
+            // Helper function to execute scripts in the injected HTML
+            async function setHTMLWithScripts(container, html) {
+                container.innerHTML = html;
+                const scripts = Array.from(container.querySelectorAll("script"));
+                for (const oldScript of scripts) {
+                    const newScript = document.createElement("script");
+                    for (const attr of oldScript.attributes) {
+                        newScript.setAttribute(attr.name, attr.value);
+                    }
+                    if (oldScript.src) {
+                        await new Promise((resolve, reject) => {
+                            newScript.onload = resolve;
+                            newScript.onerror = reject;
+                            document.body.appendChild(newScript);
+                        });
+                    } else {
+                        newScript.textContent = oldScript.textContent;
+                        document.body.appendChild(newScript);
+                    }
+                    oldScript.remove();
+                }
+            }
+
+            await setHTMLWithScripts(viewSection, viewHtml);
+            viewSection.style.display = 'flex';
+
+            // 2. Fetch the task data
+            try {
+                const taskData = await request({
+                    url: `/task/${task_id}/view/`
+                });
+                console.log('task info', taskData);
+
+                // 3. Populate the view with data
+                if (typeof populateTaskData === 'function') {
+                    populateTaskData(taskData);
+                } else {
+                    console.error('populateTaskData function not found in loaded template');
+                }
+            } catch (error) {
+                console.error('Error fetching task data:', error);
+                alert('Ошибка при загрузке задачи');
+                viewSection.style.display = 'none';
+            }
+            
+            // Close view on click outside
+            viewSection.addEventListener('click', (e) => {
+                if (e.target === viewSection) {
+                    closeTaskView();
+                }
+            });
+        }
+
+        async function open_task_edit_by_id(task_id) {
+            window.editTaskId = task_id;
+
+            const viewHtml = await request({
+                url: '/task/create/',
+                method: 'GET'
+            });
+
+            const viewSection = document.querySelector('.view_task_section');
+            viewSection.innerHTML = '';
+
+            async function setHTMLWithScripts(container, html) {
+                container.innerHTML = html;
+                const scripts = Array.from(container.querySelectorAll("script"));
+                for (const oldScript of scripts) {
+                    const newScript = document.createElement("script");
+                    for (const attr of oldScript.attributes) {
+                        newScript.setAttribute(attr.name, attr.value);
+                    }
+                    if (oldScript.src) {
+                        await new Promise((resolve, reject) => {
+                            newScript.onload = resolve;
+                            newScript.onerror = reject;
+                            document.body.appendChild(newScript);
+                        });
+                    } else {
+                        newScript.textContent = oldScript.textContent;
+                        document.body.appendChild(newScript);
+                    }
+                    oldScript.remove();
+                }
+            }
+
+            await setHTMLWithScripts(viewSection, viewHtml);
+            viewSection.style.display = 'flex';
+
+            viewSection.addEventListener('click', (e) => {
+                if (e.target === viewSection) {
+                    closeTaskView();
+                }
+            });
+        }
+
+        if (typeof window.toggleSubtaskCompleted !== 'function') {
+            window.toggleSubtaskCompleted = async function(taskId, subtaskId, checkboxEl) {
+                if (!taskId || !subtaskId || !checkboxEl) return;
+                const desired = !!checkboxEl.checked;
+                const previous = !desired;
+
+                try {
+                    await request({
+                        url: `/task/${taskId}/subtasks/${subtaskId}/completed/`,
+                        method: 'PATCH',
+                        body: { completed: desired }
+                    });
+                    if (window.currentTaskId === taskId && typeof window.loadHistory === 'function') {
+                        window.loadHistory(taskId);
+                    }
+                } catch (error) {
+                    checkboxEl.checked = previous;
+                    alert('Не удалось обновить подзадачу');
+                }
+            };
+        }
+
+        function closeTaskView() {
+            const viewSection = document.querySelector('.view_task_section');
+            viewSection.style.display = 'none';
+            viewSection.innerHTML = ''; // Optional: clear content
+            window.editTaskId = null;
+        }
+    </script>
+
+    {% block sections_block %}
+    {% endblock %}
+
+    {% block other_scripts_block %}
+    {% endblock %}
+</body>
+</html>

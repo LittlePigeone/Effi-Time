@@ -1,0 +1,163 @@
+.bottom_buttons {
+    width: 100%;
+    height: 90px;
+    display: flex;
+    align-items: center;
+}
+
+.search {
+    width: 240px;
+    height: 40px;
+    margin-left: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 15px;
+    padding-left: 20px;
+    background: rgba(151, 151, 151, 0.199);
+    font-size: 14px;
+}
+
+.add_task {
+    width: 190px;
+    height: 40px;
+    margin-left: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 15px;
+    padding-left: 5px;
+    background: rgba(151, 151, 151, 0.199);  
+}
+
+.canban_text {
+    font-size: 14px;
+    color: rgb(70, 70, 70);
+}
+
+.conban-column {
+    width: 100%;
+    height: calc(100% - 90px);
+}
+
+.conban-board {
+    width: 100%;
+    height: 100%;
+    padding: 20px;
+    display: flex;
+    overflow-x: auto;
+    gap: 15px;
+}
+
+.column {
+    min-width: 200px;
+    height: 100%;
+    position: relative;
+}
+
+.column > hr {
+    height: 1px;
+    position: sticky;
+    top: 40px;
+}
+
+.column_title {
+    width: 100%;
+    height: 30px;
+    margin-bottom: 10px;
+    position: sticky;
+    top: 0px;
+    border-radius: 10px;
+    background-color: rgba(128, 128, 128, 0.507);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.colomn_task_block {
+    height: fit-content;
+    width: 100%;
+
+}
+
+.task {
+    width: 200px;
+    height: fit-content;
+    margin-top: 15px;
+    background-color: rgba(156, 156, 156, 0.103);
+    display: flex;
+    flex-direction: column;
+    padding: 15px;
+    box-sizing: border-box;
+    gap: 5px;
+}
+
+.task * {
+    font-size: smaller;
+}
+
+.name.task_text {
+    cursor: pointer;
+}
+
+.task_text {
+    margin-top: 5px;
+    color: rgb(70, 70, 70);
+}
+
+.discription {
+    max-width: 100%;
+    display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 4;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 16px;
+}
+
+.task > hr {
+    width: 98%;
+    margin-top: 10px;
+    margin-left: 1%;
+}
+
+.subtask {
+    display: flex;
+    align-items: center;
+}
+
+.subtask_title {
+    margin-left: 5px;
+    width: 180px;
+    display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.deadline {
+    font-size: 14px;
+    margin-left: 5px;
+}
+
+.tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px;
+}
+
+.tag {
+    padding: 2px 5px;
+    width: fit-content;
+    height: 20px;
+    background-color: rgba(228, 104, 104, 0.342);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.tegs_text {
+    font-size: 12px;
+    margin-bottom: 5px;
+}
