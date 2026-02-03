@@ -1,6 +1,6 @@
 import logging
 
-from datetime import timedelta
+from datetime import datetime, time, timedelta
 
 from adrf.requests import AsyncRequest
 from adrf.viewsets import ViewSet
@@ -13,9 +13,9 @@ from rest_framework.response import Response
 from common.models import Category
 from domain.schemas.task.canban import CanbanColumnRetriveDTO
 from domain.schemas.task.common import StatusRetriveDTO, SprintRetriveDTO, TagRetrieveDTO, CategoryRetriveDTO, \
-    SubtaskBulkCreateDTO, CommentCreateDTO, CommentRetrieveDTO, TaskHistoryRetrieveDTO, SubtaskCompletedUpdateDTO
+    TagCreateDTO, SubtaskBulkCreateDTO, CommentCreateDTO, CommentRetrieveDTO, TaskHistoryRetrieveDTO, SubtaskCompletedUpdateDTO
 from domain.schemas.task.error import TaskCreateErrorDTO
-from domain.schemas.task.main import TaskCreateDTO, TaskRetrieveDTO, TaskStatusUpdateDTO
+from domain.schemas.task.main import TaskCreateDTO, TaskRetrieveDTO, TaskStatusUpdateDTO, TaskTimingUpdateDTO, TaskLifecycleSegment
 from infrastructure.ai.openrouter_planner import TaskInput as PlannerTaskInput, TimeSlot as PlannerTimeSlot, analyze_task
 from infrastructure.comon.authetication import AsyncAuthentication
 from infrastructure.comon.login_decorator import login_required
@@ -24,6 +24,89 @@ from task.models import Status, Sprint, Tag, Task, Subtask, Comment, TaskHistory
 
 class TaskAsyncViewSet(ViewSet):
     authentication_classes = [AsyncAuthentication]
+
+    @staticmethod
+    def _format_duration(delta: timedelta) -> str:
+        seconds = int(delta.total_seconds())
+        if seconds < 60:
+            return "< 1 мин"
+        minutes = seconds // 60
+        if minutes < 60:
+            return f"{minutes} мин"
+        hours = minutes // 60
+        if hours < 24:
+            return f"{hours} ч {minutes % 60} мин"
+        days = hours // 24
+        if days < 30:
+            return f"{days} дн {hours % 24} ч"
+        months = days // 30
+        return f"{months} мес {days % 30} дн"
+
+    async def _calculate_lifecycle(self, task) -> tuple[list[TaskLifecycleSegment], str]:
+        history = TaskHistory.objects.filter(task_id=task.id, field="Статус").order_by("created_at")
+        history_items = [h async for h in history]
+        
+        # Get all statuses for colors
+        statuses = Status.objects.all()
+        status_map = {s.name: s.color async for s in statuses}
+        
+        segments = []
+        cursor = task.created_at
+        
+        # Determine initial status
+        current_status = "Новый" # Default fallback
+        if history_items:
+            current_status = history_items[0].old_value
+        elif task.status:
+            current_status = task.status.name
+            
+        now = timezone.now()
+        
+        # Iterate history
+        for item in history_items:
+            end = item.created_at
+            duration = end - cursor
+            
+            segments.append({
+                "status": current_status,
+                "color": status_map.get(current_status, "#e0e0e0"),
+                "duration_delta": duration,
+                "start": cursor,
+                "end": end
+            })
+            
+            cursor = end
+            current_status = item.new_value
+            
+        # Add final/current segment
+        final_duration = now - cursor
+        segments.append({
+            "status": current_status,
+            "color": status_map.get(current_status, "#e0e0e0"),
+            "duration_delta": final_duration,
+            "start": cursor,
+            "end": now
+        })
+        
+        # Calculate total and percentages
+        total_seconds = sum([s["duration_delta"].total_seconds() for s in segments])
+        total_duration_str = self._format_duration(timedelta(seconds=total_seconds))
+        
+        result_segments = []
+        for s in segments:
+            secs = s["duration_delta"].total_seconds()
+            percent = (secs / total_seconds * 100) if total_seconds > 0 else 0
+            result_segments.append(TaskLifecycleSegment(
+                status=s["status"],
+                color=s["color"],
+                duration=self._format_duration(s["duration_delta"]),
+                duration_seconds=int(s["duration_delta"].total_seconds()),
+                percent=round(percent, 1),
+                start=s["start"],
+                end=s["end"]
+            ))
+            
+        return result_segments, total_duration_str
 
     @staticmethod
     def _history_text(value) -> str:
@@ -72,18 +155,13 @@ class TaskAsyncViewSet(ViewSet):
         if not user.is_authenticated:
             return Response(status=status.HTTP_401_UNAUTHORIZED)
 
-        statuses = Status.objects.all()
-        sprints = Sprint.objects.all()
-        tags = Tag.objects.all()
+        statuses = Status.objects.order_by("id")
+        tags = Tag.objects.filter(user_id=user.id).order_by("name", "id")
         categories = Category.objects.filter(user_id=user.id)
 
         statuses = [
             StatusRetriveDTO.model_validate(item).model_dump()
             async for item in statuses
-        ]
-        sprints = [
-            SprintRetriveDTO.model_validate(item).model_dump()
-            async for item in sprints
         ]
         tags = [
             TagRetrieveDTO.model_validate(item).model_dump()
@@ -96,10 +174,36 @@ class TaskAsyncViewSet(ViewSet):
 
         return Response(data={
             'statuses': statuses,
-            'sprints': sprints,
             'tags': tags,
             'categories': categories,
         })
+
+    @login_required
+    async def create_tag(
+        self,
+        request: AsyncRequest,
+    ):
+        user = request.user
+        if not user.is_authenticated:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+
+        try:
+            dto = TagCreateDTO(**(request.data or {}))
+        except Exception:
+            return Response(data={'detail': 'Некорректные данные'}, status=status.HTTP_400_BAD_REQUEST)
+
+        name = (dto.name or "").strip()
+        if not name:
+            return Response(data={'detail': 'Название не может быть пустым'}, status=status.HTTP_400_BAD_REQUEST)
+        if len(name) > 63:
+            return Response(data={'detail': 'Название слишком длинное (макс. 63)'}, status=status.HTTP_400_BAD_REQUEST)
+
+        existing = await Tag.objects.filter(name__iexact=name, user_id=user.id).afirst()
+        if existing:
+            return Response(data=TagRetrieveDTO.model_validate(existing).model_dump(), status=status.HTTP_200_OK)
+
+        tag = await Tag.objects.acreate(name=name, user_id=user.id)
+        return Response(data=TagRetrieveDTO.model_validate(tag).model_dump(), status=status.HTTP_201_CREATED)
 
     async def check_timing(
         self,
@@ -238,6 +342,7 @@ class TaskAsyncViewSet(ViewSet):
                 tags = [tags]
             if tags is None:
                 tags = []
+            tags = list(dict.fromkeys(tags))
 
             created_subtask_names = [s.name.strip() for s in subtask_bulk_crreate_dto.subtasks if s.name and s.name.strip()]
             wants_ai_schedule = (
@@ -252,6 +357,11 @@ class TaskAsyncViewSet(ViewSet):
             task_payload["finished_at"] = self._to_aware(task_payload.get("finished_at"))
             task_payload["deadline_at"] = self._to_aware(task_payload.get("deadline_at"))
 
+            if task_payload.get("status_id") is None:
+                default_status = await Status.objects.order_by("id").afirst()
+                if default_status:
+                    task_payload["status_id"] = default_status.id
+
             ai_result = None
             if wants_ai_schedule:
                 now = timezone.now()
@@ -261,15 +371,20 @@ class TaskAsyncViewSet(ViewSet):
 
                     tag_names = []
                     if tags:
-                        async for t in Tag.objects.filter(id__in=tags):
+                        async for t in Tag.objects.filter(id__in=tags, user_id=user.id):
                             tag_names.append(t.name)
+
+                    wake = getattr(user, "wake_up_time", None)
+                    bed = getattr(user, "bed_time", None)
+                    wake_up_time = wake.strftime("%H:%M") if wake else "08:00"
+                    bed_time = bed.strftime("%H:%M") if bed else "23:00"
 
                     planner_task = PlannerTaskInput(
                         title=task_create_dto.name,
                         description=task_create_dto.description or "",
                         tags=tag_names,
-                        wake_up_time="08:00",
-                        bed_time="23:00",
+                        wake_up_time=wake_up_time,
+                        bed_time=bed_time,
                         free_slots=free_slots,
                         deadline=self._to_naive(deadline_aware),
                     )
@@ -277,7 +392,7 @@ class TaskAsyncViewSet(ViewSet):
                     try:
                         ai_result = await sync_to_async(analyze_task, thread_sensitive=False)(planner_task)
                     except Exception as exc:
-                        logging.error(f"AI planning error: {exc}")
+                        logging.exception("AI planning error")
                         ai_result = None
 
                 if ai_result and ai_result.scheduling and ai_result.scheduling.is_scheduled and ai_result.scheduling.slot:
@@ -297,8 +412,15 @@ class TaskAsyncViewSet(ViewSet):
                         detail += f"\nДата и время окончания доступна до {self._format_dt(task_create_error_dto.available_end)}"
                     return Response(data={'detail': detail}, status=status.HTTP_400_BAD_REQUEST)
 
+            allowed_tag_ids = []
+            if tags:
+                async for t in Tag.objects.filter(id__in=tags, user_id=user.id):
+                    allowed_tag_ids.append(t.id)
+            if len(allowed_tag_ids) != len(tags):
+                return Response(data={'detail': 'Некорректные тэги'}, status=status.HTTP_400_BAD_REQUEST)
+
             task = await Task.objects.acreate(**task_payload, user_id=user.id)
-            await task.tags.aset(tags)
+            await task.tags.aset(allowed_tag_ids)
 
             ai_actions = []
             if wants_ai_schedule and not created_subtask_names and ai_result and ai_result.actions:
@@ -427,6 +549,7 @@ class TaskAsyncViewSet(ViewSet):
                 tags = [tags]
             if tags is None:
                 tags = []
+            tags = list(dict.fromkeys(tags))
 
             subtasks_payload = data.get("subtasks", None)
             if subtasks_payload is None:
@@ -462,7 +585,6 @@ class TaskAsyncViewSet(ViewSet):
                 old_subtask_names.append(s.name)
 
             status_id = task_update_dto.status_id
-            sprint_id = task_update_dto.sprint_id
             category_id = task_update_dto.category_id
 
             if status_id is not None:
@@ -471,11 +593,13 @@ class TaskAsyncViewSet(ViewSet):
             else:
                 task.status = None
 
-            if sprint_id is not None:
-                new_sprint = await Sprint.objects.aget(id=sprint_id)
-                task.sprint = new_sprint
-            else:
-                task.sprint = None
+            if "sprint_id" in data:
+                sprint_id = task_update_dto.sprint_id
+                if sprint_id is not None:
+                    new_sprint = await Sprint.objects.aget(id=sprint_id)
+                    task.sprint = new_sprint
+                else:
+                    task.sprint = None
 
             if category_id is not None:
                 new_category = await Category.objects.aget(id=category_id, user_id=user.id)
@@ -493,7 +617,13 @@ class TaskAsyncViewSet(ViewSet):
             task.deadline_at = self._to_aware(new_deadline_at)
 
             await task.asave()
-            await task.tags.aset(tags)
+            allowed_tag_ids = []
+            if tags:
+                async for t in Tag.objects.filter(id__in=tags, user_id=user.id):
+                    allowed_tag_ids.append(t.id)
+            if len(allowed_tag_ids) != len(tags):
+                return Response(data={'detail': 'Некорректные тэги'}, status=status.HTTP_400_BAD_REQUEST)
+            await task.tags.aset(allowed_tag_ids)
 
             created_subtasks = []
             updated_subtasks = []
@@ -590,6 +720,90 @@ class TaskAsyncViewSet(ViewSet):
             return Response(data={'detail': str(exc)}, status=status.HTTP_400_BAD_REQUEST)
 
     @login_required
+    async def update_timing(self, request: AsyncRequest, task_id: int):
+        user = request.user
+        if not user.is_authenticated:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+
+        try:
+            dto = TaskTimingUpdateDTO(**request.data)
+            new_started_at = self._to_aware(dto.started_at)
+            new_finished_at = self._to_aware(dto.finished_at)
+
+            if new_started_at is None or new_finished_at is None:
+                return Response(data={"detail": "Нужно передать started_at и finished_at"}, status=status.HTTP_400_BAD_REQUEST)
+            if new_started_at >= new_finished_at:
+                return Response(data={"detail": "Время начала не может быть больше времени окончания!"}, status=status.HTTP_400_BAD_REQUEST)
+
+            task = await Task.objects.aget(id=task_id, user_id=user.id)
+            old_started_at = task.started_at
+            old_finished_at = task.finished_at
+
+            overlap = await Task.objects.filter(
+                user_id=user.id,
+                started_at__isnull=False,
+                finished_at__isnull=False,
+                started_at__lt=new_finished_at,
+                finished_at__gt=new_started_at,
+            ).exclude(id=task_id).aexists()
+
+            if overlap:
+                detail = "Нельзя переместить задачу на это время"
+
+                prev_task = await Task.objects.filter(
+                    user_id=user.id,
+                    started_at__isnull=False,
+                    finished_at__isnull=False,
+                    finished_at__lte=new_started_at,
+                ).exclude(id=task_id).order_by('-finished_at').afirst()
+                if prev_task:
+                    detail += f"\nДата и время начала доступна с {self._format_dt(prev_task.finished_at)}"
+
+                next_task = await Task.objects.filter(
+                    user_id=user.id,
+                    started_at__isnull=False,
+                    finished_at__isnull=False,
+                    started_at__gte=new_finished_at,
+                ).exclude(id=task_id).order_by('started_at').afirst()
+                if next_task:
+                    detail += f"\nДата и время окончания доступна до {self._format_dt(next_task.started_at)}"
+
+                return Response(data={"detail": detail}, status=status.HTTP_400_BAD_REQUEST)
+
+            task.started_at = new_started_at
+            task.finished_at = new_finished_at
+            await task.asave(update_fields=["started_at", "finished_at"])
+
+            if old_started_at != task.started_at:
+                await self._add_history(
+                    task_id=task.id,
+                    user=user,
+                    field="Начало выполнения",
+                    old_value=self._format_dt(old_started_at),
+                    new_value=self._format_dt(task.started_at),
+                )
+
+            if old_finished_at != task.finished_at:
+                await self._add_history(
+                    task_id=task.id,
+                    user=user,
+                    field="Конец выполнения",
+                    old_value=self._format_dt(old_finished_at),
+                    new_value=self._format_dt(task.finished_at),
+                )
+
+            return Response(data={
+                "id": task.id,
+                "started_at": self._format_dt(task.started_at),
+                "finished_at": self._format_dt(task.finished_at),
+            }, status=status.HTTP_200_OK)
+        except Task.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        except Exception as exc:
+            logging.error(f"Update timing error: {exc}")
+            return Response(data={"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @login_required
     async def retrive(
         self,
         request: AsyncRequest,
@@ -615,6 +829,10 @@ class TaskAsyncViewSet(ViewSet):
             return Response(status=status.HTTP_404_NOT_FOUND)
 
         task_retrive_dto = TaskRetrieveDTO.model_validate(task)
+        
+        lifecycle, total_dur = await self._calculate_lifecycle(task)
+        task_retrive_dto.lifecycle = lifecycle
+        task_retrive_dto.total_duration = total_dur
 
         return Response(data=task_retrive_dto.model_dump())
 
@@ -659,6 +877,18 @@ class TaskAsyncViewSet(ViewSet):
         self,
         request: AsyncRequest,
     ) -> Response:
+        category_id = request.query_params.get("category_id")
+        category_id_int = None
+        if category_id:
+            try:
+                category_id_int = int(category_id)
+            except Exception:
+                category_id_int = None
+
+        task_filter = {"user_id": request.user.id}
+        if category_id_int is not None:
+            task_filter["category_id"] = category_id_int
+
         statuses = (
             Status.objects
             .prefetch_related(
@@ -667,7 +897,7 @@ class TaskAsyncViewSet(ViewSet):
                     queryset=Task.objects.prefetch_related(
                         'subtasks',
                         'tags',
-                    ).filter(user_id=request.user.id),
+                    ).filter(**task_filter),
                 )
             )
             .all()
@@ -683,6 +913,105 @@ class TaskAsyncViewSet(ViewSet):
             data=canabna_list,
             status=status.HTTP_200_OK,
         )
+
+    @staticmethod
+    def _week_start_from_iso(value=None):
+        tz = timezone.get_current_timezone()
+        now = timezone.localtime(timezone.now(), tz)
+        base_date = now.date()
+
+        if value:
+            try:
+                base_date = datetime.strptime(value, "%Y-%m-%d").date()
+            except Exception:
+                base_date = now.date()
+
+        monday = base_date - timedelta(days=(base_date.weekday() % 7))
+        return timezone.make_aware(datetime.combine(monday, time.min), tz)
+
+    @staticmethod
+    def _split_into_day_segments(start_dt, end_dt, clamp_start, clamp_end):
+        tz = timezone.get_current_timezone()
+        start_dt = timezone.localtime(max(start_dt, clamp_start), tz)
+        end_dt = timezone.localtime(min(end_dt, clamp_end), tz)
+        if start_dt >= end_dt:
+            return []
+
+        cursor = start_dt
+        segments = []
+        while cursor < end_dt:
+            next_midnight = timezone.make_aware(
+                datetime.combine(cursor.date() + timedelta(days=1), time.min),
+                tz,
+            )
+            seg_end = min(end_dt, next_midnight)
+            if seg_end <= cursor:
+                break
+            segments.append((cursor, seg_end))
+            cursor = seg_end
+        return segments
+
+    @login_required
+    async def list_calendar(self, request: AsyncRequest):
+        user = request.user
+        if not user.is_authenticated:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+
+        week_start = self._week_start_from_iso(request.query_params.get("week_start"))
+        week_end = week_start + timedelta(days=7)
+
+        qs = (
+            Task.objects.filter(
+                user_id=user.id,
+                started_at__isnull=False,
+                finished_at__isnull=False,
+                started_at__lt=week_end,
+                finished_at__gt=week_start,
+            )
+            .order_by("started_at")
+        )
+
+        tasks = []
+        async for t in qs:
+            segments = self._split_into_day_segments(t.started_at, t.finished_at, week_start, week_end)
+            if not segments:
+                continue
+            if len(segments) == 1:
+                s, e = segments[0]
+                tasks.append({
+                    "id": t.id,
+                    "title": t.name,
+                    "started_at": self._format_dt(s),
+                    "ended_at": self._format_dt(e),
+                })
+                continue
+
+            for idx, (s, e) in enumerate(segments, start=1):
+                tasks.append({
+                    "id": f"{t.id}:{idx}",
+                    "source_id": t.id,
+                    "title": t.name,
+                    "started_at": self._format_dt(s),
+                    "ended_at": self._format_dt(e),
+                })
+
+        week_days = []
+        week_day_names = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"]
+        cur = timezone.localtime(week_start).date()
+        for i in range(7):
+            d = cur + timedelta(days=i)
+            week_days.append({
+                "iso": d.strftime("%Y-%m-%d"),
+                "date_key": d.strftime("%d.%m.%Y"),
+                "label": f"{week_day_names[i]}, {d.day}",
+            })
+
+        return Response(data={
+            "week_start": timezone.localtime(week_start).date().strftime("%Y-%m-%d"),
+            "week_end": timezone.localtime(week_end - timedelta(seconds=1)).date().strftime("%Y-%m-%d"),
+            "days": week_days,
+            "tasks": tasks,
+        }, status=status.HTTP_200_OK)
 
     @login_required
     async def create_comment(self, request: AsyncRequest, task_id: int):

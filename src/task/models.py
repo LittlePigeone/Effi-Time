@@ -9,7 +9,7 @@ status_types = [(type.value, type.value) for type in StatusType]
 
 class Status(models.Model):
     name = models.CharField(max_length=31)
-    type = models.CharField(choices=status_types, default=status_types[0][0])
+    type = models.CharField(max_length=31, choices=status_types, default=status_types[0][0])
     color = models.CharField(max_length=9)
 
     def __str__(self):
@@ -34,6 +34,7 @@ class Sprint(models.Model):
 
 class Tag(models.Model):
     name = models.CharField(max_length=63)
+    user = models.ForeignKey(to=User, on_delete=models.CASCADE, null=True, default=None)
 
     def __str__(self):
         return self.name

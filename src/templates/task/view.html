@@ -1,188 +1,157 @@
-<link rel="stylesheet" href="../static/quill/css/atom-one-dark.min.css">
-<link rel="stylesheet" href="../static/quill/css/quill.css">
-<link rel="stylesheet" href="../static/first_app/css/view_task.css">
+{% load static %}
 
+<div class="task_view_main_block">
+    <!-- Header -->
+    <div class="task-view--up-bar">
+        <!-- Edit Button -->
+        <button type="button" class="btn" onclick="window.open_task_edit_by_id(window.currentTaskId)" style="margin-right: auto;">
+            Изменить
+        </button>
+        
+        <div class="close-button" onclick="closeTaskView()">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </div>
+    </div>
 
-<script src="../static/quill/js/highlight.min.js"></script>
-<script src="../static/quill/js/quill.js"></script>
-
-<script src="../static/common/js/copy.js"></script>
-
-<div class="task_view_main_block glass-block">
-            <div class="task-view--up-bar">
-                <div class="close-button" onclick="closeTaskView()">
-                    <img src="../static/first_app/images/close.svg" alt="Close">
-                </div>
-                <input type="button" value="Изменить" class="glass-input-button small-border" onclick="window.open_task_edit_by_id(window.currentTaskId)">
-            </div>
-            <hr>
-            <!-- <div class="task-view--settings">
-                <div class="task-view--settings--overlay">
-                    <h2 class="settings-title task_text">Подзадача с каким-то очень длинным текстом не на одну строчку</h2>
-                </div>
-            </div> -->
-            <div class="task-view--main-info">
-                <h1 class="main-ingo-title">Основное</h1>
-                <div class="task-title-block">
-                    <h2 class="task-title" id="task-title"></h2>
-                    <div class="copy-button" onclick="copy_text(this)">
-                        <img src="../static/first_app/images/copy.svg" alt="">
-                    </div>
-                </div>
-                <!-- Описание -->
-                 <div class="glass_input_texture" style="margin-top: 10px;">
-                    <div class="main-info-discription" id="task-description"></div>
+    <div class="task-view-content-wrapper">
+        <!-- Main Info -->
+        <div class="task-view--section">
+            <div style="display: flex; align-items: start; justify-content: space-between; gap: 10px;">
+                <h1 id="task-title" style="font-size: 24px; font-weight: 600; color: var(--text-primary); margin: 0; line-height: 1.3;"></h1>
+                <div class="copy-button" onclick="copy_text(this)" style="cursor: pointer; padding: 5px; opacity: 0.7;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
                 </div>
             </div>
-            <hr>
-            <div class="task-view--other-parameters">
-                <h1 class="settings-title task_text">Параметры</h1>
-                <div class="set_start_day">
-                    <h6 class="other_parameters_text">Начало выполнения</h6>
-                    <h6 class="parameter-title" id="task-started-at">—</h6>
-                </div>
-                <div class="set_end_day">
-                    <h6 class="other_parameters_text">Конец выполнения</h6>
-                    <h6 class="parameter-title" id="task-finished-at">—</h6>
-                </div>
-                <div class="set_end_day">
-                    <h6 class="other_parameters_text">Дэдлайн</h6>
-                    <h6 class="parameter-title" id="task-deadline-at">—</h6>
-                </div>
-                <div class="status">
-                    <h6 class="other_parameters_text">Статус</h6>
-                    <div class="parameters-items">
-                        <div class="glass-select-selected-item glass-block">
-                            <h6 id="task-status">—</h6>
-                        </div>
-                    </div>
-                </div>
-                <div class="sprint">
-                    <h6 class="other_parameters_text">Спринт</h6>
-                    <h6 class="parameter-title" id="task-sprint">—</h6>
-                </div>
-                <div class="tags">
-                    <h6 class="other_parameters_text">Тэги</h6>
-                    <div class="parameters-items" id="task-tags">
-                        <!-- Tags will be injected here -->
-                    </div>
-                </div>
 
-                <div class="subtasks-block">
-                    <h1 class="subtitle">Подзадачи</h1>
-                    <div class="subtask-items" id="task-subtasks">
-                         <!-- Subtasks will be injected here -->
-                    </div>
-                </div>
-            </div>
-            <hr>
-            <div class="comment-history-section">
-                <div class="comment-history-tabs">
-                    <h1 id="comment-tab" class="active" onclick='show_section(this)'>Коментраии</h1>
-                    <h1 id="history-tab" onclick='show_section(this)'>История</h1>
-                    <hr id="tab-indicator">
-                </div>
-                <hr>
-                <div class="tab-section comment-section">
-                    <div class="comment-field-block">
-                        <div class="glass_input_texture">
-                            <div class="comment-field" id="comment-editor"></div>
-                        </div>
-                        <input type="button" value="Отправить" class="glass-input-button small-border" onclick="window.sendComment()">
-
-                        <div class="comments-list" id="comments-container">
-                            <!-- Comments will be injected here -->
-                        </div>
-
-                        <script type="text/javascript">
-                            (function() {
-                                const toolbar = [
-                                [{ header: [1, 2, 3, 4, false] }],
-                                ['bold', 'italic', 'underline', 'strike'],
-                                [{ list: 'ordered' }, { list: 'bullet' }],
-                                ['link', 'blockquote', 'code-block'],
-                                [{ align: [] }],
-                                ['image'] // Add image button
-                            ];
-
-                            // We attach to window to make it accessible to sendComment
-                            window.commentTextField = new Quill('#comment-editor', {
-                                theme: 'snow',
-                                modules: {
-                                    toolbar: {
-                                        container: toolbar,
-                                        handlers: {
-                                            // Default image handler is usually sufficient for base64, 
-                                            // but if you have a custom upload handler, use it here.
-                                            // image: () => this.handleImageUpload() 
-                                        }
-                                    },
-                                    // Add imageResize if the library is loaded
-                                    imageResize: typeof window.ImageResize !== 'undefined' ? {
-                                        parchment: window.Quill.import('parchment'),
-                                        modules: [ 'Resize', 'DisplaySize', 'Toolbar' ]
-                                    } : undefined
-                                }
-                            });
-                        })();
-                        </script>
-                    </div>
-                    <div class=""></div>
-                </div>
-                <div class="tab-section history-section hide">
-                    <div class="history-list" id="history-container"></div>
-                </div>
+            <div class="description-container">
+                <div class="main-info-discription" id="task-description" style="padding: 15px; color: var(--text-primary);"></div>
             </div>
         </div>
 
+        <div style="border-bottom: 1px solid var(--border-subtle);"></div>
+
+        <!-- Parameters -->
+        <div class="task-view--section">
+            <h6 class="section-title">Детали</h6>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <div>
+                    <h6 class="section-subtitle">Статус</h6>
+                    <div id="task-status" style="font-size: 14px; color: var(--text-primary); background: var(--bg-element); padding: 5px 10px; border-radius: 6px; display: inline-block;">—</div>
+                </div>
+                <div>
+                     <h6 class="section-subtitle">Тэги</h6>
+                     <div id="task-tags" style="display: flex; flex-wrap: wrap; gap: 5px;"></div>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div>
+                    <h6 class="section-subtitle">Начало</h6>
+                    <div id="task-started-at" style="font-size: 14px; color: var(--text-primary);">—</div>
+                </div>
+                <div>
+                    <h6 class="section-subtitle">Конец</h6>
+                    <div id="task-finished-at" style="font-size: 14px; color: var(--text-primary);">—</div>
+                </div>
+                <div>
+                    <h6 class="section-subtitle">Дедлайн</h6>
+                    <div id="task-deadline-at" style="font-size: 14px; color: var(--text-primary);">—</div>
+                </div>
+            </div>
+            
+            <div>
+                <h6 class="section-subtitle">Подзадачи</h6>
+                <div id="task-subtasks" style="display: flex; flex-direction: column; gap: 8px;"></div>
+            </div>
+        </div>
+
+        <div style="border-bottom: 1px solid var(--border-subtle);"></div>
+
+        <!-- Lifecycle Section -->
+        <div class="task-view--section">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h6 class="section-title" style="margin: 0;">Жизненный цикл задачи</h6>
+                <span id="lifecycle-total" style="font-size: 14px; color: var(--text-secondary);"></span>
+            </div>
+            
+            <div id="lifecycle-bar" style="display: flex; width: 100%; height: 24px; border-radius: 6px; overflow: hidden; margin-bottom: 15px; background: var(--bg-element);"></div>
+            
+            <div id="lifecycle-legend" style="display: flex; flex-wrap: wrap; gap: 15px; justify-content: center; font-size: 12px; color: var(--text-secondary);"></div>
+        </div>
+
+        <div style="border-bottom: 1px solid var(--border-subtle);"></div>
+
+        <!-- Tabs: Comments / History -->
+        <div class="task-view--section">
+            <div class="tabs-header">
+                <div id="comment-tab" class="tab-btn active" onclick="switchTab('comment')">Комментарии</div>
+                <div id="history-tab" class="tab-btn" onclick="switchTab('history')">История</div>
+            </div>
+
+            <!-- Comments Section -->
+            <div id="comment-section" class="tab-content">
+                <div style="margin-bottom: 15px;">
+                    <div class="description-container" style="background: var(--bg-element);">
+                        <div id="comment-editor" style="height: 100px;"></div>
+                    </div>
+                    <button class="btn btn-primary" onclick="window.sendComment()" style="margin-top: 10px;">Отправить</button>
+                </div>
+                <div id="comments-container" style="display: flex; flex-direction: column; gap: 10px;"></div>
+            </div>
+
+            <!-- History Section -->
+            <div id="history-section" class="tab-content" style="display: none;">
+                <div id="history-container"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script type="text/javascript">
-    var tabIndicator = document.getElementById('tab-indicator');
+    function switchTab(tabName) {
+        const commentTab = document.getElementById('comment-tab');
+        const historyTab = document.getElementById('history-tab');
+        const commentSec = document.getElementById('comment-section');
+        const historySec = document.getElementById('history-section');
 
-    function show_section(element) {
-        let idName = element.id.split('-')[0];
-        let tabsBlock = element.parentNode;
-
-        tabsBlock.querySelectorAll('h1')
-            .forEach(h => h.classList.toggle('active', h === element));
-
-        const sectionSelectors = Array.from(tabsBlock.querySelectorAll('h1'))
-            .map(h => '.' + h.id.split('-')[0] + '-section')
-            .join(',');
-        document.querySelectorAll(sectionSelectors).forEach(sec => {
-            sec.style.display = sec.classList.contains(idName + '-section') ? '' : 'none';
-        });
-
-        const p = tabsBlock.getBoundingClientRect();
-        const r = element.getBoundingClientRect();
-        tabIndicator.style.left  = (r.left - p.left) + 'px';
-        tabIndicator.style.top   = (r.top  - p.top + r.height) + 'px';
-        tabIndicator.style.width = r.width + 'px';
-
-        let sections = document.getElementsByClassName('tab-section');
-        for (let i = 0; i < sections.length; i++) {
-            if (sections[i].classList.contains(`${idName}-section`)) {
-                sections[i].classList.remove('hide');
-            }
-            else {
-                sections[i].classList.add('hide');
-            }
-        }
-
-        if (idName === 'history' && window.currentTaskId) {
-            window.loadHistory(window.currentTaskId);
+        if (tabName === 'comment') {
+            commentTab.classList.add('active');
+            historyTab.classList.remove('active');
+            commentSec.style.display = 'block';
+            historySec.style.display = 'none';
+        } else {
+            commentTab.classList.remove('active');
+            historyTab.classList.add('active');
+            commentSec.style.display = 'none';
+            historySec.style.display = 'block';
+            if (window.currentTaskId) window.loadHistory(window.currentTaskId);
         }
     }
+
+    // Initialize Quill for Comments
+    (function() {
+        const toolbar = [
+            ['bold', 'italic', 'underline', 'strike'],
+            [{ list: 'ordered' }, { list: 'bullet' }],
+            ['link', 'code-block']
+        ];
+        
+        window.commentTextField = new Quill('#comment-editor', {
+            theme: 'snow',
+            placeholder: 'Написать комментарий...',
+            modules: { toolbar: toolbar }
+        });
+    })();
 </script>
 
 <script type="text/javascript">
-    // Define functions on window to ensure they are accessible globally and persist/overwrite correctly
-    
     window.currentTaskId = null;
 
     window.populateTaskData = function(task) {
         window.currentTaskId = task.id;
         document.getElementById('task-title').textContent = task.name;
-        document.getElementById('task-description').innerHTML = task.description;
+        document.getElementById('task-description').innerHTML = task.description || '<span style="color:var(--text-secondary)">Нет описания</span>';
         
         const formatDate = (dateStr) => {
             if (!dateStr) return '—';
@@ -196,53 +165,127 @@
         document.getElementById('task-finished-at').textContent = formatDate(task.finished_at);
         document.getElementById('task-deadline-at').textContent = formatDate(task.deadline_at);
         
+        const statusEl = document.getElementById('task-status');
         if (task.status) {
-             document.getElementById('task-status').textContent = task.status.name;
-        }
-
-        if (task.sprint) {
-            document.getElementById('task-sprint').textContent = task.sprint.name;
+             statusEl.textContent = task.status.name;
+        } else {
+             statusEl.textContent = '—';
         }
 
         const tagsContainer = document.getElementById('task-tags');
         tagsContainer.innerHTML = '';
-        if (task.tags) {
+        if (task.tags && task.tags.length) {
             task.tags.forEach(tag => {
-                tagsContainer.innerHTML += `
-                    <div class="glass-select-selected-item glass-block">
-                        <h6>${tag.name}</h6>
-                    </div>
-                `;
+                const t = document.createElement('div');
+                t.style.cssText = 'background: rgba(88,166,255,0.1); color: var(--accent-primary); padding: 2px 8px; border-radius: 4px; font-size: 12px; border: 1px solid rgba(88,166,255,0.2);';
+                t.textContent = tag.name;
+                tagsContainer.appendChild(t);
             });
+        } else {
+            tagsContainer.innerHTML = '<span style="color:var(--text-tertiary); font-size:12px;">Нет тэгов</span>';
         }
 
         const subtasksContainer = document.getElementById('task-subtasks');
         subtasksContainer.innerHTML = '';
-        if (task.subtasks) {
+        if (task.subtasks && task.subtasks.length) {
             task.subtasks.forEach(sub => {
                 subtasksContainer.innerHTML += `
-                    <div class="subtask">
-                        <input type="checkbox" class="glass-input-checkbox" ${sub.completed ? 'checked' : ''} onchange="window.toggleSubtaskCompleted(${task.id}, ${sub.id}, this)">
-                        <h6 class="task_subtask_title task_text">${sub.name}</h6>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <input type="checkbox" style="cursor: pointer;" ${sub.completed ? 'checked' : ''} onchange="window.toggleSubtaskCompleted(${task.id}, ${sub.id}, this)">
+                        <span style="font-size: 14px; color: var(--text-primary); ${sub.completed ? 'text-decoration: line-through; opacity: 0.6;' : ''}">${sub.name}</span>
                     </div>
                 `;
             });
+        } else {
+             subtasksContainer.innerHTML = '<span style="color:var(--text-tertiary); font-size:12px;">Нет подзадач</span>';
+        }
+
+        // Lifecycle
+        document.getElementById('lifecycle-total').textContent = task.total_duration || '—';
+        const lifeBar = document.getElementById('lifecycle-bar');
+        const lifeLegend = document.getElementById('lifecycle-legend');
+        lifeBar.innerHTML = '';
+        lifeLegend.innerHTML = '';
+
+        if (task.lifecycle && task.lifecycle.length) {
+            const seenStatuses = new Set();
+            
+            task.lifecycle.forEach(seg => {
+                // Bar segment
+                if (seg.percent > 0) {
+                    const el = document.createElement('div');
+                    el.style.width = seg.percent + '%';
+                    el.style.backgroundColor = seg.color;
+                    el.style.height = '100%';
+                    el.title = `${seg.status}: ${seg.duration}`;
+                    el.style.transition = 'width 0.5s ease';
+                    
+                    // Optional: text inside if wide enough
+                    if (seg.percent > 10) {
+                        el.style.display = 'flex';
+                        el.style.alignItems = 'center';
+                        el.style.justifyContent = 'center';
+                        el.style.color = '#fff';
+                        el.style.fontSize = '10px';
+                        el.style.overflow = 'hidden';
+                        el.style.whiteSpace = 'nowrap';
+                        el.textContent = seg.duration;
+                        el.style.textShadow = '0 0 2px rgba(0,0,0,0.5)';
+                    }
+                    lifeBar.appendChild(el);
+                }
+
+                // Legend
+                if (!seenStatuses.has(seg.status)) {
+                    seenStatuses.add(seg.status);
+                    
+                    // Sum up duration for this status across all segments
+                    const totalSecs = task.lifecycle
+                        .filter(s => s.status === seg.status)
+                        .reduce((acc, curr) => acc + (curr.duration_seconds || 0), 0);
+                        
+                    // Format total duration
+                    let durStr = '';
+                    if (totalSecs < 60) durStr = "< 1 мин";
+                    else {
+                        const m = Math.floor(totalSecs / 60);
+                        const h = Math.floor(m / 60);
+                        const d = Math.floor(h / 24);
+                        if (d > 0) durStr = `${d} дн ${h%24} ч`;
+                        else if (h > 0) durStr = `${h} ч ${m%60} мин`;
+                        else durStr = `${m} мин`;
+                    }
+                    
+                    const item = document.createElement('div');
+                    item.className = 'lifecycle-legend-item';
+                    item.setAttribute('data-tooltip', `${seg.status}: ${durStr}`);
+                    item.style.display = 'flex';
+                    item.style.alignItems = 'center';
+                    item.style.gap = '6px';
+                    item.style.cursor = 'pointer';
+                    
+                    item.innerHTML = `
+                        <div style="width: 10px; height: 10px; border-radius: 50%; background-color: ${seg.color};"></div>
+                        <span>${seg.status}</span>
+                    `;
+                    lifeLegend.appendChild(item);
+                }
+            });
+        } else {
+            lifeBar.innerHTML = '<div style="width: 100%; text-align: center; color: var(--text-tertiary); line-height: 24px; font-size: 12px;">Нет данных</div>';
         }
 
         window.loadComments(task.id);
-        window.loadHistory(task.id);
+        // Load history only if tab active, or pre-load
+        // window.loadHistory(task.id); 
     };
 
     window.loadComments = function(taskId) {
-       request({
-           url: `/task/${taskId}/comments/`,
-       }).then(comments => {
-           if (!comments || !Array.isArray(comments)) return; // Safety check
+       request({ url: `/task/${taskId}/comments/` }).then(comments => {
+           if (!comments || !Array.isArray(comments)) return;
            const container = document.getElementById('comments-container');
            container.innerHTML = '';
-           comments.forEach(comment => {
-               window.addCommentToDOM(comment, 'beforeend');
-           });
+           comments.forEach(comment => window.addCommentToDOM(comment, 'beforeend'));
        });
     };
 
@@ -254,21 +297,12 @@
        });
 
        const html = `
-           <div class="user-comment-block">
-               <div class="user-photo">
-                   <div class="image-small image"></div>
+           <div class="comment-block">
+               <div class="comment-header">
+                   <div class="comment-user">${comment.user_name}</div>
+                   <div class="comment-date">${dateStr}</div>
                </div>
-               <div class="user-comment">
-                   <div class="user-comment-title">
-                       <div class="user-comment-name">${comment.user_name}</div>
-                       <div class="user-comment-date">${dateStr}</div>
-                   </div>
-                   <div class="user-comment-text">
-                       <div class="ql-snow">
-                           <div class="ql-editor">${comment.text}</div>
-                       </div>
-                   </div>
-               </div>
+               <div class="user-comment-text ql-editor" style="padding:0;">${comment.text}</div>
            </div>
        `;
        container.insertAdjacentHTML(position, html);
@@ -276,14 +310,11 @@
 
     window.sendComment = function() {
        if (!window.currentTaskId) return;
-       // Access global commentTextField
-       if (!window.commentTextField) {
-           console.error("Editor not initialized");
-           return;
-       }
+       if (!window.commentTextField) return;
        
        const text = window.commentTextField.root.innerHTML;
-       if (window.commentTextField.getText().trim().length === 0) return;
+       const plain = window.commentTextField.getText().trim();
+       if (plain.length === 0) return;
 
        request({
            url: `/task/${window.currentTaskId}/comments/`,
@@ -294,141 +325,53 @@
            window.commentTextField.setContents([]); 
        }).catch(err => {
            console.error(err);
-           alert('Ошибка отправки комментария');
+           alert('Ошибка отправки');
        });
     };
 
     window.loadHistory = function(taskId) {
-       request({
-           url: `/task/${taskId}/history/`,
-       }).then(items => {
+       request({ url: `/task/${taskId}/history/` }).then(items => {
            if (!items || !Array.isArray(items)) return;
            const container = document.getElementById('history-container');
-           if (!container) return;
            container.innerHTML = '';
-           items.forEach(item => {
-               window.addHistoryToDOM(item, 'beforeend');
-           });
+           items.forEach(item => window.addHistoryToDOM(item, 'beforeend'));
        });
     };
 
     window.addHistoryToDOM = function(item, position = 'afterbegin') {
         const container = document.getElementById('history-container');
-        if (!container) return;
-
-        const wrapper = document.createElement('div');
-        wrapper.className = 'history-item';
-
-        const title = document.createElement('div');
-        title.className = 'history-item-title';
-
-        const left = document.createElement('div');
-        left.className = 'history-item-left';
-
-        const field = document.createElement('div');
-        field.className = 'history-item-field';
-        field.textContent = item.field || '—';
-
-        const meta = document.createElement('div');
-        meta.className = 'history-item-meta';
-
-        const user = document.createElement('span');
-        user.className = 'history-item-user';
-        user.textContent = item.user_name || '';
-
-        const date = document.createElement('span');
-        date.className = 'history-item-date';
-        date.textContent = new Date(item.created_at).toLocaleString('ru-RU', {
+        
+        const dateStr = new Date(item.created_at).toLocaleString('ru-RU', {
             day: '2-digit', month: '2-digit', year: 'numeric',
             hour: '2-digit', minute: '2-digit'
         });
 
-        if (user.textContent) {
-            meta.appendChild(user);
+        const div = document.createElement('div');
+        div.className = 'history-item';
+        
+        let content = `
+            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                <span class="history-item-field">${item.field || 'Обновление'}</span>
+                <span class="history-item-date" style="font-size: 10px; color: var(--text-tertiary);">${dateStr}</span>
+            </div>
+        `;
+
+        const oldVal = item.old_value ?? '—';
+        const newVal = item.new_value ?? '—';
+        
+        if (oldVal !== '—' || newVal !== '—') {
+            content += `
+                <div class="history-item-change">
+                    <span style="color: var(--accent-danger);">${oldVal}</span>
+                    <span style="color: var(--text-secondary); margin: 0 5px;">→</span>
+                    <span style="color: var(--accent-success);">${newVal}</span>
+                </div>
+            `;
         }
-        meta.appendChild(date);
+        
+        div.innerHTML = content;
 
-        left.appendChild(field);
-        left.appendChild(meta);
-
-        title.appendChild(left);
-
-        const change = document.createElement('div');
-        change.className = 'history-item-change';
-
-        const oldVal = (item.old_value ?? '').toString();
-        const newVal = (item.new_value ?? '').toString();
-        if (oldVal || newVal) {
-            const oldSpan = document.createElement('span');
-            oldSpan.className = 'history-item-old';
-            oldSpan.textContent = oldVal || '—';
-
-            const arrow = document.createElement('span');
-            arrow.className = 'history-item-arrow';
-            arrow.textContent = '→';
-
-            const newSpan = document.createElement('span');
-            newSpan.className = 'history-item-new';
-            newSpan.textContent = newVal || '—';
-
-            change.appendChild(oldSpan);
-            change.appendChild(arrow);
-            change.appendChild(newSpan);
-            wrapper.appendChild(title);
-            wrapper.appendChild(change);
-        } else {
-            wrapper.appendChild(title);
-        }
-
-        if (position === 'beforeend') {
-            container.appendChild(wrapper);
-        } else {
-            container.prepend(wrapper);
-        }
+        if (position === 'beforeend') container.appendChild(div);
+        else container.prepend(div);
     };
-
-    if (typeof window.open_task_edit_by_id !== 'function') {
-        window.open_task_edit_by_id = async function(task_id) {
-            window.editTaskId = task_id;
-
-            const viewHtml = await request({
-                url: '/task/create/',
-                method: 'GET'
-            });
-
-            const viewSection = document.querySelector('.view_task_section');
-            viewSection.innerHTML = '';
-
-            async function setHTMLWithScripts(container, html) {
-                container.innerHTML = html;
-                const scripts = Array.from(container.querySelectorAll("script"));
-                for (const oldScript of scripts) {
-                    const newScript = document.createElement("script");
-                    for (const attr of oldScript.attributes) {
-                        newScript.setAttribute(attr.name, attr.value);
-                    }
-                    if (oldScript.src) {
-                        await new Promise((resolve, reject) => {
-                            newScript.onload = resolve;
-                            newScript.onerror = reject;
-                            document.body.appendChild(newScript);
-                        });
-                    } else {
-                        newScript.textContent = oldScript.textContent;
-                        document.body.appendChild(newScript);
-                    }
-                    oldScript.remove();
-                }
-            }
-
-            await setHTMLWithScripts(viewSection, viewHtml);
-            viewSection.style.display = 'flex';
-
-            viewSection.addEventListener('click', (e) => {
-                if (e.target === viewSection) {
-                    closeTaskView();
-                }
-            });
-        }
-    }
 </script>

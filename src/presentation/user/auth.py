@@ -9,6 +9,11 @@ urlpatterns = [
         'post': 'login',
     }), name='login'),
 
+    path("register/", AuthAsyncViewSet.as_view({
+        'get': "register_page",
+        'post': 'register',
+    }), name='register'),
+
 
     path("logout/", AuthAsyncViewSet.as_view({
         'get': "logout",

@@ -1,220 +1,322 @@
-.waiter {
-    content: url('../images/waiter.png');
-    position: absolute;
-    width: 70px;
-    right: 20px;
-    top: -85px;
-}
+@import url('../../common/css/variables.css');
 
+/* --- Layout --- */
 .calendar-section {
     width: 100%;
-    height: 85%;
-
+    height: 100%;
     display: flex;
-    align-items: center;
-    justify-content: center;
+    flex-direction: column;
+    overflow: hidden;
+    padding: var(--space-16);
 }
 
 .calendar-main-block {
-    margin-top: 150px;
-    min-width: 320px;
-    width: 80%;
-    height: 90%;
-
-    position: relative;
-
-    padding: 20px 40px;
-    box-sizing: border-box;
-}
-
-.calendar-block {
-    position: relative;
-    height: 100%;
-}
-
-.calendar--times {
-    overflow-y: auto;
-    height: calc(100% - 24px);
-    display: grid;
-    place-items: center;
-}
-
-.calendar--times-rows {
-    height: 100%;
     width: 100%;
-    grid-area: 1 / 1;
-}
-
-/*  */
-
-.calendar--row {
+    height: 100%;
     display: flex;
-    gap: 10px;
-    width: 100%;
-    height: 44px;
-
-    border-top: 1.2px solid rgba(255, 255, 255, 0.493);
+    flex-direction: column;
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+    position: relative;
 }
 
-.calendar--row > h6 {
-    font-size: 12px;
-    width: 55px;
-    height: 100%;
-    color: rgba(0, 0, 0, 0.541);
+/* --- Toolbar --- */
+.calendar-week-toolbar {
     display: flex;
     align-items: center;
-    justify-content: center;    
+    justify-content: center;
+    gap: var(--space-16);
+    height: 60px;
+    border-bottom: 1px solid var(--border-subtle);
+    background-color: var(--bg-app);
+    flex-shrink: 0;
 }
 
-.calendar--row > hr {
-    width: 100%;
-    height: 1px;
-    outline: none;
-    border: none;
-    background-color: rgba(255, 255, 255, 0.493);
-}
-
-/*  */
-
-.calendar--times-columns {
-    grid-area: 1 / 1;
-    height: 100%;
-    width: 100%;
-    
+.calendar-week-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-md);
+    background-color: var(--bg-element);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-primary);
+    cursor: pointer;
     display: flex;
-    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--ease-default);
+    font-size: 18px;
+    line-height: 1;
 }
 
-.calendar--times-columns > .time-column {
-    height: 100%;
-    min-width: 55px;
+.calendar-week-btn:hover {
+    background-color: var(--bg-element-hover);
+    border-color: var(--text-secondary);
 }
 
-.calendar--times-columns > .day-column {
-    height: 100%;
-    width: 100%;
+.calendar-week-label {
+    font-size: var(--text-base);
+    font-weight: 600;
+    color: var(--text-primary);
+    min-width: 200px;
+    text-align: center;
+}
+
+/* --- Grid Structure --- */
+.calendar-block {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
     position: relative;
 }
 
-.calendar--times-columns > hr {
-    height: 100%;
-    width: 1.2px;
-    outline: none;
-    border: none;
-    background-color: rgba(255, 255, 255, 0.493);
-}
-
-/*  */
-
+/* Header (Days) */
 .calendar--days {
-    width: 100%;
-    height: fit-content;
-    border-bottom: 1.3px solid rgba(255, 255, 255, 0.599);
-    padding-left: 55px;
-    padding-right: 8px;
-    box-sizing: border-box;
     display: flex;
+    width: 100%;
+    height: 48px;
+    border-bottom: 1px solid var(--border-subtle);
+    padding-left: 60px; /* Time column offset */
+    background-color: var(--bg-app);
+    flex-shrink: 0;
+    
+    position: sticky;
+    top: 0;
+    z-index: 100;
 }
 
 .day-number {
-    width: 100%;
-    font-size: 16px;
+    flex: 1;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 10px 0px 5px 0px;
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+    font-weight: 500;
+    border-left: 1px solid var(--border-subtle);
+    background-color: var(--bg-app); /* ensure opacity */
 }
 
-
-
-@media(max-width: 697px) {
-    .calendar--times {
-        height: calc(100% - 52px);
-    }
+.day-number:first-child {
+    border-left: none;
 }
 
-/* --------------------------- */
-/* Задачи */
+/* Body (Scrollable Time Area) */
+.calendar--times {
+    flex: 1;
+    overflow-y: auto;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--bg-surface);
+}
 
-.cal-task-block {
-    top: 100px;
-    height: 150px;
-    background-color: rgba(0, 0, 0, 0.212);
+.calendar-scroll-content {
+    flex: 1;
+    position: relative;
+    display: grid;
+    grid-template-areas: "content";
+}
 
-    padding: 10px;
-    position: absolute;
-    left: 0px;
+.calendar--times-rows {
+    grid-area: content;
     width: 100%;
-    margin: 2px;
+    z-index: 1;
+}
+
+.calendar--row {
+    display: flex;
+    height: 60px; /* Hour height */
+    width: 100%;
+    border-bottom: 1px solid var(--border-subtle);
     box-sizing: border-box;
-    cursor: all-scroll;
-    border-radius: 7px;
 }
 
-.cal-task-hidden {
-    visibility: hidden; /* блок «пропадает», но не ломает расчёты */
-}
-
-.cal-task-ghost {
-    opacity: 0.8;
-    pointer-events: none; /* чтобы не мешал кликам/elementFromPoint */
-    z-index: 1000;
-}
-
-.cal-task-shadow {
-    background-color: rgba(200, 200, 200, 0.3); /* серая тень под курсором */
-    border: 1px dashed rgba(255, 255, 255, 0.6);
-    box-shadow: none;
+.calendar--row > h6 {
+    width: 60px;
+    flex-shrink: 0;
+    height: 100%;
+    font-size: 11px;
+    color: var(--text-tertiary);
     display: flex;
-    align-items: center;
     justify-content: center;
-    font-size: 24px;
+    padding-top: 6px;
+    border-right: 1px solid var(--border-subtle);
+    background-color: var(--bg-app);
+    font-weight: normal;
+}
+
+/* Columns Overlay for Tasks */
+.calendar--times-columns {
+    grid-area: content;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    padding-left: 60px; /* Match time column width */
+    z-index: 2;
+    pointer-events: none; /* Allow clicks to pass to rows */
+}
+
+.day-column {
+    flex: 1;
+    height: 100%;
+    position: relative;
+    border-left: 1px solid var(--border-subtle);
+    pointer-events: auto; /* Enable task interaction */
+}
+
+.day-column:first-child {
+    border-left: none;
+}
+
+/* --- Tasks --- */
+.cal-task-block {
+    position: absolute;
+    width: calc(100% - 6px);
+    margin: 0 3px;
+    border-radius: var(--radius-sm);
+    padding: 4px 6px;
+    box-sizing: border-box;
+    cursor: pointer;
+    background-color: rgba(88, 166, 255, 0.15); /* Primary Accent transparent */
+    border-left: 3px solid var(--accent-primary);
+    border: 1px solid rgba(88, 166, 255, 0.3);
+    border-left-width: 3px;
+    
+    transition: all var(--ease-default);
+    z-index: 10;
+    overflow: hidden;
+}
+
+.cal-task-block:hover {
+    z-index: 20;
+    background-color: rgba(88, 166, 255, 0.25);
+    box-shadow: var(--shadow-md);
+    transform: scale(1.02);
 }
 
 .cal-task-info {
     display: flex;
-    align-items: center;
-    justify-content: start;
-    width: 100%;
-    height: 100%;
-    gap: 5px;
-}
-
-.cal-task-status {
-    border: none;
-    outline: none;
-    min-width: 3px;
-    height: 100%;
-    border-radius: 4px;
-
-    background-color: #fff;
-}
-
-.cal-task-name-n-time {
-    height: 100%;
-    display: flex;
     flex-direction: column;
-    justify-content: space-between;
+    height: 100%;
+    gap: 2px;
 }
 
 .cal-task-name {
-    font-size: 1em;
-    display: -webkit-box;
-        -webkit-box-orient: vertical;
-        -webkit-line-clamp: 2;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-primary);
+    line-height: 1.2;
     overflow: hidden;
     text-overflow: ellipsis;
-    line-height: 1.2em;
-    max-height: 2.4em;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
 }
 
 .cal-task-time {
     font-size: 10px;
-    line-height: 1;    
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 3px;
 }
 
 .cal-task-time::before {
-    content: url('../../common/svgs/oclock.svg');
-    display: inline-block;
-    vertical-align: middle;
+    content: '';
+    width: 8px;
+    height: 8px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238b949e' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'%3E%3C/circle%3E%3Cpolyline points='12 6 12 12 16 14'%3E%3C/polyline%3E%3C/svg%3E");
+    background-size: contain;
+    background-repeat: no-repeat;
+    opacity: 0.8;
+}
+
+/* Drag & Drop Visuals */
+.cal-task-ghost {
+    opacity: 0.6;
+    background-color: var(--bg-element);
+    border: 1px dashed var(--text-secondary);
+}
+
+.cal-task-shadow {
+    background-color: rgba(255, 255, 255, 0.05);
+    border: 1px dashed var(--text-secondary);
+    border-radius: var(--radius-sm);
+    z-index: 5;
+}
+
+/* Loading Spinner */
+.waiter {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--border-subtle);
+    border-top-color: var(--accent-primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    z-index: 50;
+}
+
+@keyframes spin { 100% { transform: rotate(360deg); } }
+
+/* --- Resize Handles --- */
+.resize-handle {
+    position: absolute;
+    left: 0;
+    width: 100%;
+    height: 6px;
+    cursor: ns-resize;
+    z-index: 20;
+    /* invisible hit area, but we can add a visual indicator if needed */
+}
+
+.resize-handle.top {
+    top: 0;
+}
+
+.resize-handle.bottom {
+    bottom: 0;
+}
+
+.cal-task-block:hover .resize-handle {
+    background-color: rgba(0, 0, 0, 0.1);
+}
+
+/* --- Responsive --- */
+@media (max-width: 768px) {
+    .calendar-section {
+        padding: 0;
+        border-radius: 0;
+    }
+    
+    .calendar-main-block {
+        border: none;
+        border-radius: 0;
+    }
+    
+    .calendar--days {
+        padding-left: 50px;
+    }
+    
+    .calendar--times-columns {
+        padding-left: 50px;
+    }
+    
+    .calendar--row > h6 {
+        width: 50px;
+    }
+    
+    .day-number {
+        font-size: 10px;
+        flex-direction: column;
+        line-height: 1.2;
+        padding: 4px;
+        text-align: center;
+    }
 }

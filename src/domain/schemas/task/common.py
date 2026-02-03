@@ -47,6 +47,10 @@ class TagRetrieveDTO(BaseModel):
         from_attributes = True
 
 
+class TagCreateDTO(BaseModel):
+    name: str
+
+
 class SubtaskCreateDTO(BaseModel):
     name: str
     completed: bool = False

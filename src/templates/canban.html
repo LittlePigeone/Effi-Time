@@ -1,6 +1,5 @@
 {% extends 'index.html' %}
 
-
 {% block links_block %}
     <link rel="stylesheet" href="../static/first_app/css/canban.css">
     <style>
@@ -50,6 +49,40 @@
     </div>
 
     <script type="text/javascript">
+        const categoryId = new URLSearchParams(window.location.search).get('category_id');
+        window.defaultCategoryId = categoryId ? parseInt(categoryId, 10) : null;
+
+        let taskSearchQuery = "";
+
+        function applyTaskFilter() {
+            const q = (taskSearchQuery ?? "").toString().trim().toLowerCase();
+            const tasks = document.querySelectorAll('.task[data-name]');
+            tasks.forEach((el) => {
+                if (!q) {
+                    el.style.display = '';
+                    return;
+                }
+                const name = (el.dataset.name ?? "").toString().toLowerCase();
+                el.style.display = name.includes(q) ? '' : 'none';
+            });
+        }
+
+        function initTaskSearch() {
+            const input = document.querySelector('.search');
+            if (!input) return;
+            input.oninput = () => {
+                taskSearchQuery = input.value ?? "";
+                applyTaskFilter();
+            };
+            input.onkeydown = (e) => {
+                if (e.key === 'Escape') {
+                    input.value = '';
+                    taskSearchQuery = '';
+                    applyTaskFilter();
+                }
+            };
+        }
+
         async function setHTMLWithScripts(container, html) {
             container.innerHTML = html;
 
@@ -82,7 +115,7 @@
 
         function show_canban_list() {
             request({
-                url: '/task/canban/',
+                url: categoryId ? `/task/canban/?category_id=${encodeURIComponent(categoryId)}` : '/task/canban/',
             }).then(data => {
                 const canban_board = document.querySelector(".conban-board");
 
@@ -101,7 +134,7 @@
                     columnDiv.addEventListener('drop', handleDrop);
 
                     columnDiv.innerHTML = `
-                        <div class="column_title">
+                        <div class="column_title" style="background-color: ${column.color}4D">
                             <h1 class="canban_text">${column.name}</h1>
                         </div>
                         <hr>
@@ -132,6 +165,7 @@
                         const taskDiv = document.createElement("div");
                         taskDiv.className = "task glass-block";
                         taskDiv.dataset.id = task.id;
+                        taskDiv.dataset.name = (task.name ?? "").toString();
                         taskDiv.draggable = true; // Make task draggable
 
                         // Add drag events to task
@@ -163,23 +197,104 @@
                 const addCategory = document.createElement("div");
                 addCategory.className = "add_category";
                 canban_board.appendChild(addCategory);
+
+                applyTaskFilter();
             });
         }
 
         // Drag and Drop Handlers
         let draggedTask = null;
+        
+        // Auto Scroll State
+        let isDragging = false;
+        let dragMouseX = 0;
+        let dragMouseY = 0;
+        let dragScrollAnimationId = null;
+        const SCROLL_ZONE = 100;
+        const SCROLL_STEP = 10;
+        const VERTICAL_SCROLL_ZONE = 60;
+        const VERTICAL_SCROLL_STEP = 5;
+
+        function startAutoScroll() {
+            if (dragScrollAnimationId) return;
+            
+            function step() {
+                if (!isDragging) {
+                    dragScrollAnimationId = null;
+                    return;
+                }
+
+                // Horizontal Scroll (Board)
+                const board = document.querySelector('.conban-board');
+                if (board) {
+                    const width = window.innerWidth;
+                    if (dragMouseX < SCROLL_ZONE) {
+                        board.scrollLeft -= SCROLL_STEP;
+                    } else if (dragMouseX > width - SCROLL_ZONE) {
+                        board.scrollLeft += SCROLL_STEP;
+                    }
+                }
+
+                // Vertical Scroll (Column)
+                // Find element under cursor to see if it's inside a column
+                const el = document.elementFromPoint(dragMouseX, dragMouseY);
+                if (el) {
+                    const columnBlock = el.closest('.colomn_task_block');
+                    if (columnBlock) {
+                        const rect = columnBlock.getBoundingClientRect();
+                        const relY = dragMouseY - rect.top;
+                        const bottomRelY = rect.bottom - dragMouseY;
+
+                        if (relY < VERTICAL_SCROLL_ZONE) {
+                            columnBlock.scrollTop -= VERTICAL_SCROLL_STEP;
+                        } else if (bottomRelY < VERTICAL_SCROLL_ZONE) {
+                            columnBlock.scrollTop += VERTICAL_SCROLL_STEP;
+                        }
+                    }
+                }
+                
+                dragScrollAnimationId = requestAnimationFrame(step);
+            }
+            
+            dragScrollAnimationId = requestAnimationFrame(step);
+        }
+
+        function stopAutoScroll() {
+            if (dragScrollAnimationId) {
+                cancelAnimationFrame(dragScrollAnimationId);
+                dragScrollAnimationId = null;
+            }
+        }
+
+        function updateDragMousePosition(e) {
+            dragMouseX = e.clientX;
+            dragMouseY = e.clientY;
+            // Prevent default to allow drop
+            e.preventDefault(); 
+        }
 
         function handleDragStart(e) {
             draggedTask = this;
             this.classList.add('dragging');
             e.dataTransfer.effectAllowed = 'move';
             e.dataTransfer.setData('text/plain', this.dataset.id);
+
+            // Init Auto Scroll
+            isDragging = true;
+            // We attach to document to catch dragover anywhere
+            document.addEventListener('dragover', updateDragMousePosition);
+            startAutoScroll();
         }
 
         function handleDragEnd(e) {
             this.classList.remove('dragging');
             draggedTask = null;
             document.querySelectorAll('.column').forEach(col => col.classList.remove('drag-over'));
+            
+            // Cleanup Auto Scroll
+            isDragging = false;
+            stopAutoScroll();
+            document.removeEventListener('dragover', updateDragMousePosition);
         }
 
         function handleDragOver(e) {
@@ -233,16 +348,84 @@
         }
 
         show_canban_list();
+        initTaskSearch();
 
         async function open_create_task_page() {
-            const data = await request({
-                url: "/task/create/",
-            });
+            const url = categoryId ? `/task/create/?category_id=${encodeURIComponent(categoryId)}` : "/task/create/";
+            const resp = await fetch(url, { method: "GET" });
+            const data = await resp.text();
 
             const view = document.querySelector('.view_task_section');
             view.innerHTML = '';
             await setHTMLWithScripts(view, data);   
             view.style.display = "flex";
         }
+
+        // WebSocket Listener
+        document.addEventListener('taskUpdate', function(e) {
+            const data = e.detail;
+            const task = data.task;
+            
+            // Remove existing if any
+            const existing = document.querySelector(`.task[data-id="${task.id}"]`);
+            if (existing) existing.remove();
+            
+            // Determine column
+            const statusId = task.status ? task.status.id : null;
+            if (!statusId) return; 
+            
+            const column = document.querySelector(`.column[data-id="${statusId}"]`);
+            if (!column) return; 
+            
+            const taskBlock = column.querySelector('.colomn_task_block');
+            if (!taskBlock) return;
+            
+            // Render task HTML
+            const tagsHTML = (task.tags || []).map(tag => `
+                <div class="tag glass-block">
+                    <h1 class="tegs_text task_text">${tag.name}</h1>
+                </div>
+            `).join("");
+
+            const subtasksHTML = (task.subtasks || []).map(sub => `
+                <div class="subtask">
+                    <input type="checkbox" class="glass-input-checkbox" ${sub.completed ? "checked" : ""} onclick="event.stopPropagation()" onchange="window.toggleSubtaskCompleted(${task.id}, ${sub.id}, this)">
+                    <h1 class="subtask_title task_text">${sub.name}</h1>
+                </div>
+            `).join("");
+
+            const deadline = task.finished_at
+                ? new Date(task.finished_at).toLocaleString()
+                : "—";
+
+            const taskDiv = document.createElement("div");
+            taskDiv.className = "task glass-block";
+            taskDiv.dataset.id = task.id;
+            taskDiv.dataset.name = (task.name ?? "").toString();
+            taskDiv.draggable = true;
+
+            taskDiv.addEventListener('dragstart', handleDragStart);
+            taskDiv.addEventListener('dragend', handleDragEnd);
+
+            taskDiv.innerHTML = `
+                <h1 class="name task_text" onclick="open_task_by_id(${task.id})">${task.name}</h1>
+                <h1 class="discription task_text">${task.description || ""}</h1>
+                <hr>
+
+                ${subtasksHTML ? subtasksHTML + "<hr>" : ""}
+
+                <h1 class="deadline task_text">Срок: ${deadline}</h1>
+
+                <div class="tags">
+                    ${tagsHTML}
+                </div>
+            `;
+
+            taskBlock.appendChild(taskDiv);
+            
+            if (typeof applyTaskFilter === 'function') {
+                applyTaskFilter();
+            }
+        });
     </script>
 {% endblock %}

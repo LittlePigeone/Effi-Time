@@ -31,7 +31,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('name', models.CharField(max_length=31)),
-                ('type', models.CharField(choices=[('Новый', 'Новый'), ('В работе', 'В работе'), ('На паузе', 'На паузе'), ('Закрыт', 'Закрыт')], default='Новый')),
+                ('type', models.CharField(choices=[('new', 'new'), ('in work', 'in work'), ('wait for detail', 'wait for detail'), ('info received', 'info received'), ('paused', 'paused'), ('completed', 'completed'), ('cancelled', 'cancelled'), ('deferred', 'deferred')], default='new', max_length=31)),
                 ('color', models.CharField(max_length=9)),
             ],
             options={

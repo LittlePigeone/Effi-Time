@@ -20,9 +20,19 @@ class TaskCreateDTO(BaseModel):
     @field_validator("started_at", "finished_at", "deadline_at", mode="before")
     @staticmethod
     def _empty_datetime_to_none(value):
-        if value == "":
+        if value == "" or value == "null" or value == "undefined":
             return None
         return value
+
+
+class TaskLifecycleSegment(BaseModel):
+    status: str
+    color: str
+    duration: str
+    duration_seconds: int
+    percent: float
+    start: datetime
+    end: datetime
 
 
 class TaskRetrieveDTO(BaseModel):
@@ -39,6 +49,8 @@ class TaskRetrieveDTO(BaseModel):
     user: UserRetriveDTO | None = None
     tags: list[TagRetrieveDTO] = []
     subtasks: list[SubtaskRetrieveDTO] = []
+    lifecycle: list[TaskLifecycleSegment] = []
+    total_duration: str = ""
 
     @field_validator("subtasks", "tags", mode="before")
     @staticmethod
@@ -55,6 +67,11 @@ class TaskUpdateDTO(TaskCreateDTO):
 
 class TaskStatusUpdateDTO(BaseModel):
     status_id: int
+
+
+class TaskTimingUpdateDTO(BaseModel):
+    started_at: datetime
+    finished_at: datetime
 
 
 class TaskShortRetriveDTO(BaseModel):

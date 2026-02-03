@@ -1,7 +1,11 @@
 from enum import Enum
 
 class StatusType(Enum):
-    new = "Новый"
-    in_work = "В работе"
-    on_pause = "На паузе"
-    closed = "Закрыт"
+    new = "new"
+    in_work = "in work"
+    wait_for_detail = "wait for detail"
+    info_received = "info received"
+    paused = "paused"
+    completed = "completed"
+    cancelled = "cancelled"
+    deferred = "deferred"

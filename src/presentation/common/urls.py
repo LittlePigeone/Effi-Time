@@ -9,4 +9,7 @@ urlpatterns = [
     path('category/create/', CategoryAsyncViewSet.as_view({
         'post': 'create',
     })),
+    path('category/update/<int:pk>/', CategoryAsyncViewSet.as_view({
+        'patch': 'update',
+    })),
 ]

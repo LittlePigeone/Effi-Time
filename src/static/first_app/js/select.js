@@ -1,67 +1,27 @@
-class AddItem {
-    AddItem({
-        canAdd=false,
-        urlToAdd=''
-    }) {
-        this.canAdd = canAdd;
-        this.urlToAdd = urlToAdd;
-    }
-}
-
 /**
- * @param {Object} params
- * @param {null | string} [params.selector]
- * @param {string[]} [params.selectors]
- * @param {Map[]} [params.items]
- * @param {null | AddItem} [params.addItem]
- * @param {string} [params.title]
- * @param {boolean} [params.multiple]
- * @param {int | string | null} [params.value]
- * @param {Array<int | string> | null} [params.values]
- * @returns {boolean | void}
+ * Modern "Linear-style" Custom Select
+ * Replaces the old glass-morphism style with a clean, professional look.
  */
+
 function initGlassSelect({
-    selector=null,
-    selectors=[],
-    items=[],
-    addItem=null,
-    title="",
-    multiple=false,
-    value=null,
-    values=null,
+    selector = null,
+    selectors = [],
+    items = [],
+    title = "",
+    multiple = false,
+    value = null,
+    values = null,
+    dynamicCreate = false,
+    url = null,
 }) {
     if (selector) {
-        let select = document.querySelector(selector);
-        if (select === undefined) {
-            console.error('Не получается инициалиизировать список!\nБлок не найден');
-            return;
-        }
-        else {
-            return initInterface({
-                select: select,
-                title: title,
-                items: items,
-                multiple: multiple,
-                value: value,
-                values: values,
-            });
-        }
-    }
-    else if (selectors.length > 1) {
-        let selects = [];
-        selectors.forEach((selector, i) => {
-            let item = document.querySelector(selector);
-            if (item) {
-                selects.push(item);
-            }
+        const el = document.querySelector(selector);
+        if (el) return initInterface({ select: el, title, items, multiple, value, values, dynamicCreate, url });
+    } else if (selectors.length > 0) {
+        selectors.forEach(s => {
+            const el = document.querySelector(s);
+            if (el) initInterface({ select: el, title, items, multiple, value, values, dynamicCreate, url });
         });
-        if (selects.length != selectors.length) {
-            console.error('Не получается инициалиизировать список!\nКакой-то из блоков не найден');
-            return;
-        }
-    }
-    else {
-        return;
     }
 }
 
@@ -69,294 +29,222 @@ function initInterface({
     select,
     title,
     items,
-    multiple=false,
-    value=null,
-    values=null,
+    multiple = false,
+    value = null,
+    values = null,
+    dynamicCreate = false,
+    url = null,
 }) {
-    let main_select_block = createDiv({
-        classList: ["glass-select"],
-        id: select.id,
-        onclick: (event) => {
-            // Останавливаем всплытие события, чтобы не сработал глобальный обработчик
-            event.stopPropagation();
-        },
-    });
+    // Clear previous content if re-initializing
+    select.innerHTML = '';
+    select.className = ''; // Reset classes if any
 
-    // Инициализация values в зависимости от режима
-    if (multiple) {
-        main_select_block.values = [];
-    } else {
-        main_select_block.values = null;
+    // Container
+    const container = document.createElement('div');
+    container.className = 'custom-select-container';
+    container.id = select.id ? `select-${select.id}` : '';
+    
+    // State
+    container.items = Array.isArray(items) ? [...items] : [];
+    container.values = multiple ? (values || []) : (value ? [value] : []);
+    container.multiple = multiple;
+
+    // Label
+    if (title) {
+        const label = document.createElement('label');
+        label.className = 'custom-select-label';
+        label.textContent = title;
+        container.appendChild(label);
     }
-    main_select_block.multiple = multiple;
 
-    let drop_list = createDiv({
-        classList: ["glass-select-drop-list"],
-        onclick: (event) => {
-            event.stopPropagation();
-        },
-    });
-    let selected_items = createDiv({
-        classList: ["glass-select-selected-items"],
-        onclick: (event) => {
-            event.stopPropagation();
-        },
-    });
-    let select_title = createTextH({
-        title: title,
-        classList: ["glass-select-title"],
-    });
-    // ----------
-    let dropListItemsBlock = createDiv({
-        classList: ["glass-select-drop-list-items"],
-    });
-    let textInput = createInput({
-        type: "text",
-        classList: ["glass-input-text", "small-border", "max-width"],
-        placeholder: "Введите текст...",
-        onfocus: (event) => {
-            // Закрываем все другие открытые селекты
-            closeAllGlassSelects();
+    // Trigger (The box you click)
+    const trigger = document.createElement('div');
+    trigger.className = 'custom-select-trigger';
+    trigger.tabIndex = 0; // Make focusable
+    
+    const contentSpan = document.createElement('div');
+    contentSpan.className = 'custom-select-content';
+    trigger.appendChild(contentSpan);
 
-            dropListItemsBlock.classList.add('drop-list-items-show');
-            console.log('Сфокусировались');
-        },
-        onclick: (event) => {
-            event.stopPropagation();
-        },
-    });
+    const arrow = document.createElement('div');
+    arrow.className = 'custom-select-arrow';
+    arrow.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>`;
+    trigger.appendChild(arrow);
 
-    for (let i = 0; i < items.length; i++) {
-        let selectItem = createDiv({
-            classList: ['glass-select-drop-list-value'],
-            onclick: (event) => {
-                event.stopPropagation();
+    container.appendChild(trigger);
 
-                if (multiple) {
-                    // Режим multiple: работаем со списком
-                    if (main_select_block.values.indexOf(items[i].id) == -1) {
-                        main_select_block.values.push(items[i].id);
-                        selected_items.appendChild(createSelectedItem({
-                            value: items[i].id,
-                            title: items[i].name,
-                            main_select_block: main_select_block,
-                            multiple: multiple,
-                        }));
-                        // Добавляем класс selected к элементу списка
-                        selectItem.classList.add('selected');
-                    }
-                    // В режиме multiple не закрываем список после выбора
-                } else {
-                    // Режим single: заменяем значение
+    // Dropdown Menu
+    const dropdown = document.createElement('div');
+    dropdown.className = 'custom-select-dropdown';
+    
+    // Search Input
+    const searchInput = document.createElement('input');
+    searchInput.type = 'text';
+    searchInput.className = 'custom-select-search';
+    searchInput.placeholder = 'Поиск...';
+    dropdown.appendChild(searchInput);
 
-                    // Убираем подсветку со всех элементов
-                    dropListItemsBlock.querySelectorAll('.glass-select-drop-list-value').forEach(item => {
-                        item.classList.remove('selected');
-                    });
+    // List Container
+    const listContainer = document.createElement('div');
+    listContainer.className = 'custom-select-list';
+    dropdown.appendChild(listContainer);
 
-                    main_select_block.values = items[i].id;
+    container.appendChild(dropdown);
 
-                    // Очищаем все предыдущие выбранные элементы
-                    selected_items.innerHTML = '';
-
-                    // Добавляем новый выбранный элемент
-                    selected_items.appendChild(createSelectedItem({
-                        value: items[i].id,
-                        title: items[i].name,
-                        main_select_block: main_select_block,
-                        multiple: multiple,
-                    }));
-
-                    // Добавляем класс selected к текущему элементу
-                    selectItem.classList.add('selected');
-
-                    // В режиме single закрываем список после выбора
-                    dropListItemsBlock.classList.remove('drop-list-items-show');
-                }
-            }
-        });
-
-        // Сохраняем ссылку на элемент для возможности управления подсветкой
-        selectItem.dataset.itemId = items[i].id;
-
-        let selectItemTitle = createTextH({
-            title: items[i].name,
-            hType: "h6",
-        });
-        selectItem.appendChild(selectItemTitle);
-        dropListItemsBlock.appendChild(selectItem);
-
-        if (i != (items.length - 1)) {
-            dropListItemsBlock.appendChild(
-                document.createElement('hr')
-            );
+    // Render Content in Trigger
+    const renderTrigger = () => {
+        contentSpan.innerHTML = '';
+        
+        if (container.values.length === 0 || (container.values.length === 1 && container.values[0] === null)) {
+            contentSpan.innerHTML = `<span class="placeholder" style="color:var(--text-secondary)">Выбрать...</span>`;
+            return;
         }
-    }
-
-
-    drop_list.appendChild(textInput);
-    drop_list.appendChild(dropListItemsBlock);
-
-    main_select_block.appendChild(select_title);
-    main_select_block.appendChild(drop_list);
-    main_select_block.appendChild(selected_items);
-
-
-    select.style.display = 'none';
-    select.insertAdjacentElement('afterEnd', main_select_block);
-
-    // Инициализация предустановленных значений
-    if (multiple && values && Array.isArray(values)) {
-        // Multiple режим: устанавливаем массив значений
-        values.forEach(val => {
-            const item = items.find(i => i.id === val);
-            if (item) {
-                main_select_block.values.push(item.id);
-                selected_items.appendChild(createSelectedItem({
-                    value: item.id,
-                    title: item.name,
-                    main_select_block: main_select_block,
-                    multiple: multiple,
-                }));
-                // Подсвечиваем элемент в списке
-                const dropListItem = dropListItemsBlock.querySelector(`.glass-select-drop-list-value[data-item-id="${item.id}"]`);
-                if (dropListItem) {
-                    dropListItem.classList.add('selected');
-                }
-            }
-        });
-    } else if (!multiple && value !== null) {
-        // Single режим: устанавливаем одно значение
-        const item = items.find(i => i.id === value);
-        if (item) {
-            main_select_block.values = item.id;
-            selected_items.appendChild(createSelectedItem({
-                value: item.id,
-                title: item.name,
-                main_select_block: main_select_block,
-                multiple: multiple,
-            }));
-            // Подсвечиваем элемент в списке
-            const dropListItem = dropListItemsBlock.querySelector(`.glass-select-drop-list-value[data-item-id="${item.id}"]`);
-            if (dropListItem) {
-                dropListItem.classList.add('selected');
-            }
-        }
-    }
-
-    return main_select_block;
-}
-
-function createSelectedItem({value, title, main_select_block, multiple=false}) {
-    let selectedItem = createDiv({
-        classList: ["glass-select-selected-item", "glass-block"],
-    });
-    let selectedTitle = createTextH({title: title, hType: "h6"});
-    let closeImg = document.createElement('img');
-    closeImg.src = "../static/first_app/images/close.svg";
-    let closeBtn = document.createElement('button');
-    closeBtn.className = "tag-close";
-    closeBtn.type = "button";
-    closeBtn.ariaLabel = "Удалить тэг";
-    closeBtn.onclick = (event) => {
-        event.stopPropagation();
 
         if (multiple) {
-            // Режим multiple: удаляем из массива
-            main_select_block.values.splice(
-                main_select_block.values.indexOf(value), 1
-            );
+            container.values.forEach(val => {
+                const item = container.items.find(i => i.id == val);
+                if (item) {
+                    const tag = document.createElement('span');
+                    tag.className = 'custom-select-tag';
+                    tag.innerHTML = `
+                        ${item.name}
+                        <span class="tag-remove" data-id="${val}" onclick="event.stopPropagation();">×</span>
+                    `;
+                    // Add click handler for remove button directly here or delegate
+                    tag.querySelector('.tag-remove').addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        selectItem(val);
+                    });
+                    contentSpan.appendChild(tag);
+                }
+            });
         } else {
-            // Режим single: обнуляем значение
-            main_select_block.values = null;
+            const val = container.values[0];
+            const item = container.items.find(i => i.id == val);
+            if (item) {
+                contentSpan.textContent = item.name;
+            } else {
+                contentSpan.innerHTML = `<span class="placeholder" style="color:var(--text-secondary)">Выбрать...</span>`;
+            }
         }
-
-        // Убираем подсветку с соответствующего элемента в выпадающем списке
-        const dropListItem = main_select_block.querySelector(`.glass-select-drop-list-value[data-item-id="${value}"]`);
-        if (dropListItem) {
-            dropListItem.classList.remove('selected');
-        }
-
-        event.target.closest('.glass-select-selected-item').remove();
     };
 
-    closeBtn.appendChild(closeImg);
-    selectedItem.appendChild(selectedTitle);
-    selectedItem.appendChild(closeBtn);
+    // Render List
+    const renderList = (filterText = '') => {
+        listContainer.innerHTML = '';
+        const filter = filterText.toLowerCase();
+        
+        const filtered = container.items.filter(i => (i.name || '').toLowerCase().includes(filter));
 
-    return selectedItem;
+        if (filtered.length === 0) {
+            if (dynamicCreate && filterText && url) {
+                const createOption = document.createElement('div');
+                createOption.className = 'custom-select-option create-option';
+                createOption.style.color = 'var(--accent-primary)';
+                createOption.textContent = `Создать "${filterText}"`;
+                createOption.onclick = async (e) => {
+                    e.stopPropagation();
+                    if (typeof request === 'function') {
+                        try {
+                            const res = await request({ url, method: 'POST', body: { name: filterText } });
+                            if (res && res.id) {
+                                container.items.push(res);
+                                selectItem(res.id);
+                                searchInput.value = '';
+                                renderList('');
+                            }
+                        } catch (err) { console.error(err); }
+                    }
+                };
+                listContainer.appendChild(createOption);
+            } else {
+                const empty = document.createElement('div');
+                empty.className = 'custom-select-empty';
+                empty.textContent = 'Нет данных';
+                listContainer.appendChild(empty);
+            }
+            return;
+        }
+
+        filtered.forEach(item => {
+            const option = document.createElement('div');
+            option.className = 'custom-select-option';
+            if (container.values.includes(item.id)) {
+                option.classList.add('selected');
+            }
+            option.textContent = item.name;
+            option.onclick = (e) => {
+                e.stopPropagation();
+                selectItem(item.id);
+            };
+            listContainer.appendChild(option);
+        });
+    };
+
+    // Select Item Logic
+    const selectItem = (id) => {
+        if (multiple) {
+            const idx = container.values.indexOf(id);
+            if (idx > -1) {
+                container.values.splice(idx, 1);
+            } else {
+                container.values.push(id);
+            }
+        } else {
+            container.values = [id];
+            closeDropdown();
+        }
+        renderTrigger();
+        renderList(searchInput.value);
+    };
+
+    // Open/Close Logic
+    const openDropdown = () => {
+        document.querySelectorAll('.custom-select-container').forEach(el => el.classList.remove('open'));
+        container.classList.add('open');
+        searchInput.focus();
+        renderList(searchInput.value);
+    };
+
+    const closeDropdown = () => {
+        container.classList.remove('open');
+    };
+
+    const toggleDropdown = () => {
+        if (container.classList.contains('open')) closeDropdown();
+        else openDropdown();
+    };
+
+    // Event Listeners
+    trigger.onclick = (e) => {
+        // Prevent toggle if clicking on tag remove (handled in renderTrigger)
+        if (e.target.closest('.tag-remove')) return;
+        toggleDropdown();
+    };
+
+    searchInput.onclick = (e) => e.stopPropagation();
+    
+    searchInput.oninput = (e) => {
+        renderList(e.target.value);
+    };
+
+    // Initial Render
+    renderTrigger();
+
+    // Replace original element with new container
+    select.replaceWith(container);
+
+    return container; // Return container to access .values
 }
 
-function createDiv({
-    name="",
-    classList=[],
-    id="",
-    onclick=null,
-}) {
-    let newDiv = document.createElement('div');
-    newDiv.name = name;
-    newDiv.classList.add(...classList);
-    newDiv.id = id;
-    newDiv.onclick = onclick;
-
-    return newDiv;
-}
-
-function createTextH({
-    title,
-    hType="h1",
-    name="",
-    classList=[],
-    id="",
-}) {
-    let newTextElement = document.createElement(hType);
-    newTextElement.name = name;
-    newTextElement.id = id;
-    newTextElement.classList.add(...classList);
-    newTextElement.innerText = title;
-
-    return newTextElement;
-}
-
-function createInput({
-    type="text",
-    value=null,
-    placeholder="",
-    name="",
-    classList=[],
-    id="",
-    onclick=null,
-    onfocus=null,
-    onfocusout=null,
-}) {
-    let newInputElement = document.createElement('input');
-    newInputElement.type = type;
-    newInputElement.value = value;
-    newInputElement.placeholder = placeholder;
-    newInputElement.name = name;
-    newInputElement.classList.add(...classList);
-    newInputElement.id = id;
-    newInputElement.onclick = onclick;
-    newInputElement.onfocus = onfocus;
-    newInputElement.onfocusout = onfocusout;
-
-    return newInputElement;
-}
-// -----------
-
-// Глобальная функция для закрытия всех открытых селектов
-function closeAllGlassSelects() {
-    document.querySelectorAll('.glass-select-drop-list-items').forEach(item => {
-        item.classList.remove('drop-list-items-show');
+// Global Click Listener to close dropdowns
+if (!window.customSelectListenerAdded) {
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.custom-select-container')) {
+            document.querySelectorAll('.custom-select-container.open').forEach(el => {
+                el.classList.remove('open');
+            });
+        }
     });
+    window.customSelectListenerAdded = true;
 }
-
-// Глобальный обработчик кликов для закрытия селектов при клике вне их
-document.addEventListener('click', (event) => {
-    // Проверяем, что клик был не внутри glass-select
-    if (!event.target.closest('.glass-select')) {
-        closeAllGlassSelects();
-    }
-});
-
-// drop-list--items--show

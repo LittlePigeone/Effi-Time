@@ -56,3 +56,9 @@ class TemplatesAsyncViewsSet(ViewSet):
             template_name='canban.html',
             context=context,
         )
+
+    async def get_create_task_page(self, request):
+        return render(request, "task/create.html")
+
+    async def get_profile_page(self, request):
+        return render(request, "user/profile.html")

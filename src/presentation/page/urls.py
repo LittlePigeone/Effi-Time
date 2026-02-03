@@ -21,4 +21,5 @@ urlpaterns = [
     path('task/view/', TemplatesTaskAsyncViewsSet.as_view({
         "get": "get_view_page",
     })),
+    path("profile/", TemplatesAsyncViewsSet.as_view({"get": "get_profile_page"})),
 ]

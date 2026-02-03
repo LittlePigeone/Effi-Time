@@ -1,0 +1,397 @@
+{% extends 'index.html' %}
+{% load static %}
+
+{% block links_block %}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
+    <style>
+        .profile-container {
+            padding: var(--space-32);
+            max-width: 800px;
+            margin: 0 auto;
+            width: 100%;
+            height: 100%;
+            overflow-y: auto;
+        }
+
+        .profile-header {
+            margin-bottom: var(--space-32);
+        }
+
+        .profile-title {
+            font-size: var(--text-2xl);
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .profile-grid {
+            display: grid;
+            grid-template-columns: 250px 1fr;
+            gap: var(--space-32);
+        }
+
+        /* Avatar Section */
+        .avatar-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: var(--space-16);
+        }
+
+        .avatar-preview-lg {
+            width: 200px;
+            height: 200px;
+            border-radius: var(--radius-full);
+            background-color: var(--bg-element);
+            background-size: cover;
+            background-position: center;
+            border: 2px solid var(--border-subtle);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .avatar-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.2s;
+            cursor: pointer;
+        }
+
+        .avatar-preview-lg:hover .avatar-overlay {
+            opacity: 1;
+        }
+
+        .avatar-overlay svg {
+            color: white;
+            width: 32px;
+            height: 32px;
+        }
+
+        /* Forms Section */
+        .form-section {
+            background-color: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            padding: var(--space-24);
+        }
+
+        .form-group {
+            margin-bottom: var(--space-16);
+        }
+
+        .form-label {
+            display: block;
+            font-size: var(--text-sm);
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: var(--space-8);
+        }
+
+        .form-value {
+            font-size: var(--text-base);
+            color: var(--text-primary);
+            padding: var(--space-8) 0;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        /* Cropper Modal */
+        .cropper-modal-container {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85);
+            z-index: 2000;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .cropper-wrapper {
+            max-width: 80vh;
+            max-height: 80vh;
+            background: #000;
+            overflow: hidden;
+        }
+
+        .cropper-wrapper img {
+            max-width: 100%;
+            display: block;
+        }
+
+        .cropper-actions {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .profile-grid {
+                grid-template-columns: 1fr;
+            }
+            .avatar-section {
+                margin-bottom: var(--space-24);
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="right_panel" style="display: block;"> <!-- Override grid layout of right_panel -->
+    <div class="profile-container">
+        <div class="profile-header">
+            <h1 class="profile-title">Личный кабинет</h1>
+        </div>
+
+        <div class="profile-grid">
+            <!-- Left: Avatar -->
+            <div class="avatar-section">
+                <div class="avatar-preview-lg" id="avatar-preview" onclick="document.getElementById('avatar-input').click()">
+                    <div class="avatar-overlay">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+                    </div>
+                </div>
+                <input type="file" id="avatar-input" accept="image/*" style="display: none;">
+                <p style="font-size: var(--text-xs); color: var(--text-tertiary); text-align: center;">
+                    Нажмите на фото, чтобы изменить
+                </p>
+            </div>
+
+            <!-- Right: Info & Password -->
+            <div style="display: flex; flex-direction: column; gap: var(--space-24);">
+                
+                <!-- Basic Info -->
+                <div class="form-section">
+                    <h3 style="margin-bottom: var(--space-16); font-size: var(--text-lg); font-weight: 600;">Данные</h3>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Имя пользователя</label>
+                        <div class="form-value" id="profile-username">—</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Email</label>
+                        <div class="form-value" id="profile-email">—</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Имя</label>
+                        <div class="form-value" id="profile-fullname">—</div>
+                    </div>
+                </div>
+
+                <!-- Change Password -->
+                <div class="form-section">
+                    <h3 style="margin-bottom: var(--space-16); font-size: var(--text-lg); font-weight: 600;">Смена пароля</h3>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Текущий пароль</label>
+                        <input type="password" id="old-password" class="glass-input-text">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Новый пароль</label>
+                        <input type="password" id="new-password" class="glass-input-text">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Повторите пароль</label>
+                        <input type="password" id="confirm-password" class="glass-input-text">
+                    </div>
+
+                    <button class="btn btn-primary" onclick="changePassword()" style="width: 100%;">Обновить пароль</button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Cropper Modal -->
+<div class="cropper-modal-container" id="cropper-modal">
+    <div class="cropper-wrapper">
+        <img id="cropper-image" src="">
+    </div>
+    <div class="cropper-actions">
+        <button class="btn btn-primary" onclick="cropAndUpload()">Сохранить</button>
+        <button class="btn" onclick="closeCropper()" style="background: white; color: black;">Отмена</button>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+<script>
+    let cropper = null;
+
+    // 1. Load Profile Data
+    async function loadProfile() {
+        try {
+            const user = await request({ url: '/user/profile/', method: 'GET' });
+            if (user) {
+                document.getElementById('profile-username').textContent = user.username;
+                document.getElementById('profile-email').textContent = user.email || 'Не указан';
+                document.getElementById('profile-fullname').textContent = 
+                    [user.first_name, user.last_name].filter(Boolean).join(' ') || 'Не указано';
+                
+                if (user.avatar) {
+                    document.getElementById('avatar-preview').style.backgroundImage = `url('${user.avatar}')`;
+                }
+            }
+        } catch (e) {
+            console.error('Failed to load profile', e);
+        }
+    }
+
+    loadProfile();
+
+    // 2. Avatar Selection & Cropping
+    const avatarInput = document.getElementById('avatar-input');
+    const cropperModal = document.getElementById('cropper-modal');
+    const cropperImage = document.getElementById('cropper-image');
+
+    avatarInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+            cropperImage.src = evt.target.result;
+            openCropper();
+        };
+        reader.readAsDataURL(file);
+        
+        // Reset input so same file can be selected again
+        this.value = null;
+    });
+
+    function openCropper() {
+        cropperModal.style.display = 'flex';
+        if (cropper) cropper.destroy();
+        
+        cropper = new Cropper(cropperImage, {
+            aspectRatio: 1, // Square crop for avatar
+            viewMode: 1,
+            autoCropArea: 0.8,
+        });
+    }
+
+    function closeCropper() {
+        cropperModal.style.display = 'none';
+        if (cropper) {
+            cropper.destroy();
+            cropper = null;
+        }
+    }
+
+    function cropAndUpload() {
+        if (!cropper) return;
+
+        cropper.getCroppedCanvas({
+            width: 400,
+            height: 400,
+            fillColor: '#fff',
+        }).toBlob(async (blob) => {
+            const formData = new FormData();
+            formData.append('avatar', blob, 'avatar.png');
+
+            // Show loading state?
+            const saveBtn = document.querySelector('#cropper-modal .btn-primary');
+            const originalText = saveBtn.textContent;
+            saveBtn.textContent = 'Загрузка...';
+            saveBtn.disabled = true;
+
+            try {
+                // Use fetch directly because request() wrapper might assume JSON
+                // But let's see if we can use our request wrapper.
+                // Our request wrapper sets Content-Type: application/json by default.
+                // For FormData, we need to let browser set Content-Type (with boundary).
+                // So we'll use raw fetch with same headers auth logic.
+                
+                // Hack: Using the CSRF token from cookie
+                const getCookie = (name) => {
+                    let cookieValue = null;
+                    if (document.cookie && document.cookie !== '') {
+                        const cookies = document.cookie.split(';');
+                        for (let i = 0; i < cookies.length; i++) {
+                            const cookie = cookies[i].trim();
+                            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                                break;
+                            }
+                        }
+                    }
+                    return cookieValue;
+                };
+
+                const response = await fetch('/user/profile/avatar/', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: formData
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('avatar-preview').style.backgroundImage = `url('${data.avatar}')`;
+                    
+                    // Update global sidebar avatar
+                    const sidebarImg = document.querySelector('.left_panel .image');
+                    if (sidebarImg) {
+                        sidebarImg.style.backgroundImage = `url('${data.avatar}')`;
+                    }
+                    
+                    closeCropper();
+                } else {
+                    alert('Ошибка загрузки фото');
+                }
+            } catch (e) {
+                console.error(e);
+                alert('Ошибка соединения');
+            } finally {
+                saveBtn.textContent = originalText;
+                saveBtn.disabled = false;
+            }
+        }, 'image/png');
+    }
+
+    // 3. Password Change
+    async function changePassword() {
+        const oldP = document.getElementById('old-password').value;
+        const newP = document.getElementById('new-password').value;
+        const confP = document.getElementById('confirm-password').value;
+
+        if (!oldP || !newP || !confP) {
+            alert('Заполните все поля');
+            return;
+        }
+
+        if (newP !== confP) {
+            alert('Пароли не совпадают');
+            return;
+        }
+
+        try {
+            await request({
+                url: '/user/profile/password/',
+                method: 'POST',
+                body: {
+                    old_password: oldP,
+                    new_password: newP,
+                    confirm_password: confP
+                }
+            });
+            alert('Пароль успешно изменен');
+            document.getElementById('old-password').value = '';
+            document.getElementById('new-password').value = '';
+            document.getElementById('confirm-password').value = '';
+        } catch (e) {
+            console.error(e);
+            alert('Ошибка при смене пароля: ' + (e.detail || 'Неизвестная ошибка'));
+        }
+    }
+</script>
+{% endblock %}

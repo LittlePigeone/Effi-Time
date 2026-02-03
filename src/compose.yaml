@@ -1,0 +1,67 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${DB_NAME:-time_shape_manager}
+      POSTGRES_USER: ${DB_USER:-time_shape_manager}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-time_shape_manager}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "${POSTGRES_PUBLISH_BIND:-127.0.0.1:5432}:5432"
+
+  app:
+    build:
+      context: ..
+      dockerfile: src-tim/Dockerfile
+    env_file:
+      - ../.env
+    environment:
+      DEBUG: ${DEBUG:-0}
+      SECRET_KEY: ${SECRET_KEY:-dev-insecure}
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS:-*}
+      CSRF_TRUSTED_ORIGINS: ${CSRF_TRUSTED_ORIGINS:-}
+      DB_ENGINE: ${DB_ENGINE:-django.db.backends.postgresql}
+      DB_NAME: ${DB_NAME:-time_shape_manager}
+      DB_USER: ${DB_USER:-time_shape_manager}
+      DB_PASSWORD: ${DB_PASSWORD:-time_shape_manager}
+      DB_HOST: ${DB_HOST:-db}
+      DB_PORT: ${DB_PORT:-5432}
+      RUN_MIGRATIONS: ${RUN_MIGRATIONS:-1}
+      RUN_COLLECTSTATIC: ${RUN_COLLECTSTATIC:-1}
+      PORT: 8000
+      REDIS_HOST: redis
+    depends_on:
+      - db
+      - redis
+    ports:
+      - "${APP_PUBLISH_BIND:-127.0.0.1:8000}:8000"
+    volumes:
+      - media:/app/media
+      - staticfiles:/app/staticfiles
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+
+  nginx:
+    image: nginx:1.27-alpine
+    depends_on:
+      - app
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/nginx:/etc/nginx/conf.d:ro
+      - staticfiles:/var/www/static:ro
+      - media:/var/www/media:ro
+      - ./deploy/certbot/www:/var/www/certbot
+      - ./deploy/certbot/conf:/etc/letsencrypt
+      - ./deploy/selfsigned:/etc/ssl/selfsigned:ro
+
+volumes:
+  pgdata:
+  media:
+  staticfiles:
